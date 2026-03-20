@@ -41,10 +41,10 @@ export default async function SharedReportPage({
             </span>
           </a>
           <a
-            href="/#free-audit"
+            href="/login"
             className="rounded-full bg-accent px-4 sm:px-5 py-2 text-sm font-medium text-white hover:bg-accent-bright transition-colors"
           >
-            Get Your Free Audit
+            Sign In
           </a>
         </div>
       </nav>

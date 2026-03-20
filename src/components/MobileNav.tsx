@@ -55,10 +55,10 @@ export default function MobileNav() {
           ))}
           <div className="mt-4 pt-4 border-t border-border/50">
             <a
-              href="#free-audit"
+              href="/login"
               className="flex items-center justify-center rounded-xl bg-gradient-to-r from-accent to-accent-dim px-6 py-3.5 text-base font-semibold text-white hover:opacity-90 transition-opacity"
             >
-              Get Free Audit →
+              Sign In →
             </a>
           </div>
         </div>
