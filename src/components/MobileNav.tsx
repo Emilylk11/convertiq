@@ -40,9 +40,10 @@ export default function MobileNav() {
           onClick={() => setOpen(false)}
         >
           {[
-            { label: "How It Works", href: "#how-it-works" },
+            { label: "How It Works", href: "/#how-it-works" },
             { label: "Examples", href: "/examples" },
-            { label: "Pricing", href: "#pricing" },
+            { label: "Pricing", href: "/pricing" },
+            { label: "FAQ", href: "/faq" },
           ].map((item) => (
             <a
               key={item.label}

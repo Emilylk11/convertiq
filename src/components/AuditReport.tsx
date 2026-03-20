@@ -14,6 +14,21 @@ const CATEGORIES: AuditFinding["category"][] = [
   "mobile",
 ];
 
+const categoryLabels: Record<string, string> = {
+  cta: "CTA",
+  copy: "Copy",
+  trust: "Trust",
+  ux: "UX",
+  speed: "Speed",
+  mobile: "Mobile",
+};
+
+function scoreColor(score: number) {
+  if (score >= 70) return "text-green-400";
+  if (score >= 40) return "text-yellow-400";
+  return "text-red-400";
+}
+
 export default function AuditReport({
   results,
   url,
@@ -76,10 +91,10 @@ export default function AuditReport({
             key={cat}
             className="rounded-xl border border-border/50 bg-surface/50 p-3 sm:p-4 text-center"
           >
-            <div className="text-lg sm:text-xl font-bold text-foreground">
+            <div className={`text-lg sm:text-xl font-bold ${scoreColor(results.categoryScores[cat])}`}>
               {results.categoryScores[cat]}
             </div>
-            <div className="text-xs text-muted capitalize mt-1">{cat}</div>
+            <div className="text-xs text-muted mt-1 uppercase">{categoryLabels[cat]}</div>
           </div>
         ))}
       </div>

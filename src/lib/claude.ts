@@ -5,10 +5,23 @@ import {
   buildAuditUserMessage,
 } from "./prompts/landing-page-audit";
 
+export interface AuditContext {
+  trafficType?: string;
+  industry?: string;
+  audience?: string;
+}
+
 export async function runLandingPageAudit(
-  scrapedData: ScrapedPageData
+  scrapedData: ScrapedPageData,
+  context?: AuditContext
 ): Promise<AuditResults> {
-  const anthropic = new Anthropic();
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    throw new Error(
+      "ANTHROPIC_API_KEY is not set. Check your .env.local file."
+    );
+  }
+  const anthropic = new Anthropic({ apiKey });
 
   const message = await anthropic.messages.create({
     model: "claude-sonnet-4-6",
@@ -18,7 +31,7 @@ export async function runLandingPageAudit(
     messages: [
       {
         role: "user",
-        content: buildAuditUserMessage(scrapedData),
+        content: buildAuditUserMessage(scrapedData, context),
       },
     ],
   });
@@ -28,7 +41,13 @@ export async function runLandingPageAudit(
     throw new Error("No text response from Claude");
   }
 
-  const parsed = JSON.parse(textBlock.text) as AuditResults;
+  // Strip markdown code fences if Claude wraps JSON in ```json ... ```
+  let rawText = textBlock.text.trim();
+  if (rawText.startsWith("```")) {
+    rawText = rawText.replace(/^```(?:json)?\s*\n?/, "").replace(/\n?```\s*$/, "");
+  }
+
+  const parsed = JSON.parse(rawText) as AuditResults;
 
   // Basic validation
   if (

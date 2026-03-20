@@ -29,11 +29,11 @@ export default function FindingCard({
     >
       <div className="flex flex-wrap items-center gap-2 mb-3">
         <span
-          className={`inline-block px-2.5 py-0.5 rounded-md text-xs font-semibold border ${severityStyles[finding.severity]}`}
+          className={`inline-block px-2.5 py-0.5 rounded-md text-xs font-semibold border uppercase ${severityStyles[finding.severity]}`}
         >
           {finding.severity}
         </span>
-        <span className="text-xs text-muted font-mono">
+        <span className="text-xs text-muted font-mono uppercase">
           {categoryLabels[finding.category]}
         </span>
         <span className="ml-auto text-xs text-muted">

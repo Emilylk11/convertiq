@@ -1,48 +1,118 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+
+const PROGRESS_STEPS = [
+  { text: "Scraping your page...", delay: 0 },
+  { text: "Analyzing page structure & headings...", delay: 3000 },
+  { text: "Grabbing all links & navigation...", delay: 6000 },
+  { text: "Evaluating CTAs & conversion signals...", delay: 10000 },
+  { text: "Checking trust signals & social proof...", delay: 14000 },
+  { text: "Running AI analysis on everything...", delay: 18000 },
+  { text: "Building your report...", delay: 25000 },
+  { text: "Almost there — finalizing results...", delay: 35000 },
+];
+
+const TRAFFIC_TYPES = [
+  { value: "", label: "Select traffic type" },
+  { value: "cold", label: "Cold traffic — first-time visitors who don't know the brand" },
+  { value: "warm", label: "Warm traffic — visitors who've seen ads or content before" },
+  { value: "hot", label: "Hot traffic — existing leads, email list, or retargeting" },
+  { value: "existing", label: "Existing customers — upsell, renewal, or loyalty" },
+  { value: "mixed", label: "Mixed — combination of traffic types" },
+];
+
+const INDUSTRIES = [
+  { value: "", label: "Select industry (optional)" },
+  { value: "ecommerce", label: "E-commerce / DTC" },
+  { value: "saas", label: "SaaS / Software" },
+  { value: "agency", label: "Agency / Consulting" },
+  { value: "health", label: "Health & Wellness" },
+  { value: "finance", label: "Finance / Fintech" },
+  { value: "education", label: "Education / Courses" },
+  { value: "realestate", label: "Real Estate" },
+  { value: "b2b", label: "B2B / Enterprise" },
+  { value: "nonprofit", label: "Non-profit" },
+  { value: "portfolio", label: "Portfolio / Personal Brand" },
+  { value: "other", label: "Other" },
+];
 
 export default function AuditForm() {
   const router = useRouter();
   const [url, setUrl] = useState("");
   const [email, setEmail] = useState("");
+  const [trafficType, setTrafficType] = useState("");
+  const [industry, setIndustry] = useState("");
+  const [audience, setAudience] = useState("");
+  const [showContext, setShowContext] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState("");
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useEffect(() => {
+    return () => timersRef.current.forEach(clearTimeout);
+  }, []);
+
+  function startProgressSteps() {
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
+    PROGRESS_STEPS.forEach(({ text, delay }) => {
+      const timer = setTimeout(() => setStep(text), delay);
+      timersRef.current.push(timer);
+    });
+  }
+
+  function stopProgressSteps() {
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setLoading(true);
-    setStep("Submitting...");
+    startProgressSteps();
 
     try {
-      setStep("Scraping your page...");
-
       const response = await fetch("/api/audit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, email }),
+        body: JSON.stringify({
+          url,
+          email,
+          context: {
+            trafficType: trafficType || undefined,
+            industry: industry || undefined,
+            audience: audience || undefined,
+          },
+        }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
+        stopProgressSteps();
         setError(data.error || "Something went wrong");
         setLoading(false);
         setStep("");
         return;
       }
 
+      stopProgressSteps();
       setStep("Redirecting to your report...");
       router.push(`/audit/${data.auditId}`);
     } catch {
+      stopProgressSteps();
       setError("Network error. Please try again.");
       setLoading(false);
       setStep("");
     }
   }
+
+  const selectClass =
+    "w-full rounded-xl border border-border bg-background px-4 py-3.5 text-foreground focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all disabled:opacity-50 appearance-none";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -84,6 +154,86 @@ export default function AuditForm() {
           disabled={loading}
           className="w-full rounded-xl border border-border bg-background px-4 py-3.5 text-foreground placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all disabled:opacity-50"
         />
+      </div>
+
+      {/* Context toggle */}
+      <div>
+        <button
+          type="button"
+          onClick={() => setShowContext((v) => !v)}
+          className="flex items-center gap-1.5 text-xs text-accent-bright hover:text-accent transition-colors"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 16 16"
+            fill="none"
+            className={`transition-transform ${showContext ? "rotate-45" : ""}`}
+          >
+            <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+          {showContext ? "Hide context" : "Add context for a smarter audit"}
+        </button>
+
+        {showContext && (
+          <div className="mt-3 space-y-3 rounded-xl border border-border/50 bg-surface/30 p-4">
+            <p className="text-xs font-medium text-muted">
+              Audit context <span className="text-muted/50">(optional — improves accuracy)</span>
+            </p>
+
+            <div>
+              <label htmlFor="traffic-type" className="block text-xs text-muted mb-1">
+                Who visits this page?
+              </label>
+              <select
+                id="traffic-type"
+                value={trafficType}
+                onChange={(e) => setTrafficType(e.target.value)}
+                disabled={loading}
+                className={selectClass}
+              >
+                {TRAFFIC_TYPES.map((t) => (
+                  <option key={t.value} value={t.value}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="industry" className="block text-xs text-muted mb-1">
+                Industry
+              </label>
+              <select
+                id="industry"
+                value={industry}
+                onChange={(e) => setIndustry(e.target.value)}
+                disabled={loading}
+                className={selectClass}
+              >
+                {INDUSTRIES.map((i) => (
+                  <option key={i.value} value={i.value}>
+                    {i.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="audience" className="block text-xs text-muted mb-1">
+                Target audience / demographic
+              </label>
+              <input
+                id="audience"
+                value={audience}
+                onChange={(e) => setAudience(e.target.value)}
+                placeholder="e.g. Women 25-45, small business owners, developers"
+                disabled={loading}
+                className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all disabled:opacity-50"
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {error && (

@@ -7,7 +7,15 @@ import { sendAuditEmail } from "@/lib/resend";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { url, email } = body as { url?: string; email?: string };
+    const { url, email, context } = body as {
+      url?: string;
+      email?: string;
+      context?: {
+        trafficType?: string;
+        industry?: string;
+        audience?: string;
+      };
+    };
 
     // Validate input
     if (!url || !email) {
@@ -40,7 +48,10 @@ export async function POST(request: NextRequest) {
 
     const supabase = createAdminClient();
 
-    // Create audit record
+    // Create audit record (expires 90 days from now)
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 90);
+
     const { data: audit, error: insertError } = await supabase
       .from("audits")
       .insert({
@@ -48,6 +59,7 @@ export async function POST(request: NextRequest) {
         email,
         audit_type: "free",
         status: "pending",
+        expires_at: expiresAt.toISOString(),
       })
       .select("id")
       .single();
@@ -89,7 +101,7 @@ export async function POST(request: NextRequest) {
     // Run Claude audit
     let results;
     try {
-      results = await runLandingPageAudit(scrapedData);
+      results = await runLandingPageAudit(scrapedData, context);
 
       await supabase
         .from("audits")

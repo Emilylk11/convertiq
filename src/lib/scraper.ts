@@ -31,7 +31,7 @@ const TESTIMONIAL_SIGNALS = [
   "rating",
 ];
 
-const MAX_TEXT_LENGTH = 5000;
+const MAX_TEXT_LENGTH = 8000;
 
 export async function scrapeUrl(url: string): Promise<ScrapedPageData> {
   const response = await fetch(url, {

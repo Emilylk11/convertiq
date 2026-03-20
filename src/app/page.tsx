@@ -1,5 +1,6 @@
 import AuditForm from "@/components/AuditForm";
 import MobileNav from "@/components/MobileNav";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function Home() {
   return (
@@ -22,11 +23,12 @@ export default function Home() {
             <a href="/examples" className="hover:text-foreground transition-colors">
               Examples
             </a>
-            <a href="#pricing" className="hover:text-foreground transition-colors">
+            <a href="/pricing" className="hover:text-foreground transition-colors">
               Pricing
             </a>
           </div>
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <a
               href="#free-audit"
               className="rounded-full bg-accent px-4 sm:px-5 py-2 text-sm font-medium text-white hover:bg-accent-bright transition-colors"
@@ -272,14 +274,17 @@ export default function Home() {
               <a href="/examples" className="hover:text-foreground transition-colors">
                 Examples
               </a>
-              <a href="#" className="hover:text-foreground transition-colors">
+              <a href="/pricing" className="hover:text-foreground transition-colors">
+                Pricing
+              </a>
+              <a href="/faq" className="hover:text-foreground transition-colors">
+                FAQ
+              </a>
+              <a href="/privacy" className="hover:text-foreground transition-colors">
                 Privacy
               </a>
-              <a href="#" className="hover:text-foreground transition-colors">
+              <a href="/terms" className="hover:text-foreground transition-colors">
                 Terms
-              </a>
-              <a href="#" className="hover:text-foreground transition-colors">
-                Contact
               </a>
             </div>
             <p className="text-xs sm:text-sm text-muted/60">

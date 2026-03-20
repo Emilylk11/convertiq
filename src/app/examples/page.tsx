@@ -2,6 +2,8 @@ import { sampleAudits } from "@/lib/sampleAudits";
 import ScoreGauge from "@/components/ScoreGauge";
 import FindingCard from "@/components/FindingCard";
 import CopyButton from "@/components/CopyButton";
+import MobileNav from "@/components/MobileNav";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const categoryLabels: Record<string, string> = {
   cta: "CTA",
@@ -34,12 +36,27 @@ export default function ExamplesPage() {
               Convert<span className="text-accent-bright">IQ</span>
             </span>
           </a>
-          <a
-            href="/#free-audit"
-            className="rounded-full bg-accent px-4 sm:px-5 py-2 text-sm font-medium text-white hover:bg-accent-bright transition-colors"
-          >
-            Free Audit
-          </a>
+          <div className="hidden sm:flex items-center gap-8 text-sm text-muted">
+            <a href="/#how-it-works" className="hover:text-foreground transition-colors">
+              How It Works
+            </a>
+            <a href="/examples" className="text-foreground">
+              Examples
+            </a>
+            <a href="/pricing" className="hover:text-foreground transition-colors">
+              Pricing
+            </a>
+          </div>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <a
+              href="/#free-audit"
+              className="rounded-full bg-accent px-4 sm:px-5 py-2 text-sm font-medium text-white hover:bg-accent-bright transition-colors"
+            >
+              Free Audit
+            </a>
+            <MobileNav />
+          </div>
         </div>
       </nav>
 
@@ -136,7 +153,7 @@ export default function ExamplesPage() {
                     >
                       {sample.results.categoryScores[cat]}
                     </div>
-                    <div className="text-xs text-muted capitalize mt-0.5">
+                    <div className="text-xs text-muted mt-0.5 uppercase">
                       {categoryLabels[cat]}
                     </div>
                   </div>
@@ -228,6 +245,42 @@ export default function ExamplesPage() {
           </div>
         </section>
       </main>
+
+      {/* Footer */}
+      <footer className="border-t border-border/50 bg-surface/30">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10 sm:py-12">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-2">
+              <div className="h-6 w-6 rounded-md bg-gradient-to-br from-accent to-accent-dim flex items-center justify-center font-mono text-xs font-bold text-white">
+                C
+              </div>
+              <span className="text-sm font-medium">
+                Convert<span className="text-accent-bright">IQ</span>
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted">
+              <a href="/examples" className="hover:text-foreground transition-colors">
+                Examples
+              </a>
+              <a href="/pricing" className="hover:text-foreground transition-colors">
+                Pricing
+              </a>
+              <a href="/faq" className="hover:text-foreground transition-colors">
+                FAQ
+              </a>
+              <a href="/privacy" className="hover:text-foreground transition-colors">
+                Privacy
+              </a>
+              <a href="/terms" className="hover:text-foreground transition-colors">
+                Terms
+              </a>
+            </div>
+            <p className="text-xs sm:text-sm text-muted/60">
+              &copy; 2026 ConvertIQ. All rights reserved.
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

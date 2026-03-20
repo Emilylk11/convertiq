@@ -41,6 +41,7 @@ export async function GET(
       results: record.results,
       url: record.url,
       createdAt: record.created_at,
+      isFree: record.audit_type === "free",
     }) as ReactPDFDocument
   );
 

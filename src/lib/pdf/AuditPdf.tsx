@@ -8,236 +8,233 @@ import {
 } from "@react-pdf/renderer";
 import type { AuditResults } from "@/lib/types";
 
-// Use built-in Helvetica — no external font fetch needed
 Font.registerHyphenationCallback((word) => [word]);
 
 const styles = StyleSheet.create({
   page: {
-    backgroundColor: "#09090b",
-    color: "#fafafa",
+    backgroundColor: "#ffffff",
+    color: "#18181b",
     fontFamily: "Helvetica",
-    padding: 48,
-    fontSize: 10,
+    paddingTop: 36,
+    paddingBottom: 48,
+    paddingHorizontal: 40,
+    fontSize: 9,
   },
   // Header
-  header: {
-    marginBottom: 32,
-    borderBottom: "1px solid #3f3f46",
-    paddingBottom: 24,
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottom: "2px solid #7c3aed",
   },
   logo: {
-    fontSize: 18,
+    fontSize: 16,
     fontFamily: "Helvetica-Bold",
-    marginBottom: 8,
-    color: "#c084fc",
+    color: "#7c3aed",
   },
-  logoAccent: {
-    color: "#a855f7",
+  headerRight: {
+    alignItems: "flex-end",
   },
   headerUrl: {
-    fontSize: 9,
-    color: "#a1a1aa",
-    marginBottom: 4,
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontFamily: "Helvetica-Bold",
-    color: "#fafafa",
-    marginBottom: 6,
+    fontSize: 8,
+    color: "#71717a",
+    marginBottom: 2,
   },
   // Score section
-  scoreRow: {
+  scoreSection: {
     flexDirection: "row",
+    gap: 20,
+    marginBottom: 16,
+  },
+  scoreLeft: {
     alignItems: "center",
-    gap: 24,
-    marginBottom: 24,
+    width: 70,
   },
   scoreBig: {
-    fontSize: 48,
+    fontSize: 36,
     fontFamily: "Helvetica-Bold",
   },
   scoreLabel: {
-    fontSize: 9,
-    color: "#a1a1aa",
-    marginTop: 2,
+    fontSize: 7,
+    color: "#71717a",
+    marginTop: 1,
   },
-  summary: {
+  summaryBox: {
     flex: 1,
-    fontSize: 10,
-    color: "#a1a1aa",
-    lineHeight: 1.6,
+    backgroundColor: "#f4f4f5",
+    borderRadius: 4,
+    padding: 10,
+  },
+  summaryText: {
+    fontSize: 9,
+    color: "#3f3f46",
+    lineHeight: 1.5,
   },
   // Category scores
-  categoryGrid: {
+  categoryRow: {
     flexDirection: "row",
-    gap: 8,
-    marginBottom: 28,
+    gap: 6,
+    marginBottom: 16,
   },
   categoryBox: {
     flex: 1,
-    backgroundColor: "#18181b",
-    borderRadius: 6,
-    padding: 10,
+    backgroundColor: "#f4f4f5",
+    borderRadius: 4,
+    padding: 6,
     alignItems: "center",
-    border: "1px solid #3f3f46",
   },
   categoryScore: {
-    fontSize: 16,
+    fontSize: 14,
     fontFamily: "Helvetica-Bold",
-    color: "#fafafa",
   },
   categoryName: {
-    fontSize: 8,
-    color: "#a1a1aa",
-    marginTop: 3,
+    fontSize: 7,
+    color: "#71717a",
+    marginTop: 2,
     textTransform: "uppercase",
   },
-  // Headlines section
+  // Headlines
   headlineBox: {
-    backgroundColor: "#18181b",
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 24,
-    border: "1px solid #3f3f46",
+    backgroundColor: "#f5f3ff",
+    borderRadius: 4,
+    padding: 10,
+    marginBottom: 16,
+    borderLeft: "3px solid #7c3aed",
   },
   headlineTitle: {
-    fontSize: 11,
+    fontSize: 9,
     fontFamily: "Helvetica-Bold",
-    marginBottom: 10,
-    color: "#c084fc",
+    color: "#7c3aed",
+    marginBottom: 6,
   },
   headlineLabel: {
-    fontSize: 8,
-    color: "#a1a1aa",
-    marginBottom: 3,
+    fontSize: 7,
+    color: "#71717a",
+    marginBottom: 1,
   },
   headlineText: {
-    fontSize: 11,
-    color: "#c084fc",
+    fontSize: 9,
+    color: "#18181b",
     fontFamily: "Helvetica-Oblique",
-    marginBottom: 10,
+    marginBottom: 4,
   },
-  // Findings
+  // Findings section
   sectionTitle: {
-    fontSize: 13,
+    fontSize: 11,
     fontFamily: "Helvetica-Bold",
-    marginBottom: 12,
-    marginTop: 8,
-    color: "#fafafa",
+    marginBottom: 8,
+    color: "#18181b",
   },
-  findingCard: {
-    backgroundColor: "#18181b",
-    borderRadius: 8,
-    padding: 14,
-    marginBottom: 10,
-    border: "1px solid #3f3f46",
-  },
-  findingMeta: {
+  // Table header
+  tableHeader: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 6,
-  },
-  badgeCritical: {
-    backgroundColor: "#450a0a",
-    borderRadius: 4,
+    backgroundColor: "#18181b",
+    borderRadius: 3,
+    paddingVertical: 5,
     paddingHorizontal: 6,
-    paddingVertical: 2,
-    fontSize: 8,
-    color: "#f87171",
+    marginBottom: 3,
+  },
+  thText: {
+    fontSize: 7,
     fontFamily: "Helvetica-Bold",
+    color: "#ffffff",
+    textTransform: "uppercase",
+  },
+  // Table row
+  tableRow: {
+    flexDirection: "row",
+    paddingVertical: 5,
+    paddingHorizontal: 6,
+    borderBottom: "0.5px solid #e4e4e7",
+  },
+  tableRowAlt: {
+    backgroundColor: "#fafafa",
+  },
+  // Column widths
+  colSeverity: { width: 50 },
+  colCategory: { width: 40 },
+  colTitle: { flex: 1, paddingRight: 6 },
+  colImpact: { width: 36, alignItems: "center" as const },
+  // Cell text
+  cellText: {
+    fontSize: 8,
+    color: "#3f3f46",
+  },
+  cellTitle: {
+    fontSize: 8,
+    fontFamily: "Helvetica-Bold",
+    color: "#18181b",
+    marginBottom: 1,
+  },
+  cellRec: {
+    fontSize: 7,
+    color: "#71717a",
+    lineHeight: 1.3,
+  },
+  // Severity badges
+  badgeCritical: {
+    fontSize: 6,
+    fontFamily: "Helvetica-Bold",
+    color: "#dc2626",
+    backgroundColor: "#fef2f2",
+    borderRadius: 2,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
   },
   badgeWarning: {
-    backgroundColor: "#422006",
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    fontSize: 8,
-    color: "#fbbf24",
+    fontSize: 6,
     fontFamily: "Helvetica-Bold",
+    color: "#d97706",
+    backgroundColor: "#fffbeb",
+    borderRadius: 2,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
   },
   badgeInfo: {
-    backgroundColor: "#172554",
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    fontSize: 8,
-    color: "#60a5fa",
+    fontSize: 6,
     fontFamily: "Helvetica-Bold",
+    color: "#2563eb",
+    backgroundColor: "#eff6ff",
+    borderRadius: 2,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
   },
-  findingCategory: {
-    fontSize: 8,
-    color: "#a1a1aa",
-    fontFamily: "Courier",
+  impactBar: {
+    width: 28,
+    height: 4,
+    backgroundColor: "#e4e4e7",
+    borderRadius: 2,
   },
-  findingImpact: {
-    fontSize: 8,
-    color: "#a1a1aa",
-    marginLeft: "auto",
+  impactFill: {
+    height: 4,
+    borderRadius: 2,
   },
-  findingTitle: {
-    fontSize: 11,
+  impactText: {
+    fontSize: 7,
     fontFamily: "Helvetica-Bold",
-    marginBottom: 4,
-    color: "#fafafa",
-  },
-  findingDesc: {
-    fontSize: 9,
-    color: "#a1a1aa",
-    lineHeight: 1.5,
-    marginBottom: 8,
-  },
-  recBox: {
-    backgroundColor: "#1a1025",
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 6,
-  },
-  recLabel: {
-    fontSize: 8,
-    color: "#c084fc",
-    fontFamily: "Helvetica-Bold",
-    marginBottom: 4,
-  },
-  recText: {
-    fontSize: 9,
-    color: "#a1a1aa",
-    lineHeight: 1.5,
-  },
-  copyBox: {
-    backgroundColor: "#052e16",
-    borderRadius: 5,
-    padding: 10,
-  },
-  copyLabel: {
-    fontSize: 8,
-    color: "#4ade80",
-    fontFamily: "Helvetica-Bold",
-    marginBottom: 4,
-  },
-  copyText: {
-    fontSize: 9,
-    color: "#fafafa",
-    fontFamily: "Helvetica-Oblique",
-    lineHeight: 1.5,
+    color: "#3f3f46",
+    marginTop: 1,
   },
   // Footer
   footer: {
     position: "absolute",
-    bottom: 32,
-    left: 48,
-    right: 48,
-    borderTop: "1px solid #3f3f46",
-    paddingTop: 10,
+    bottom: 24,
+    left: 40,
+    right: 40,
+    borderTop: "1px solid #e4e4e7",
+    paddingTop: 8,
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
   },
   footerText: {
-    fontSize: 8,
-    color: "#52525b",
+    fontSize: 7,
+    color: "#a1a1aa",
   },
 });
+
+const CATEGORIES = ["cta", "copy", "trust", "ux", "speed", "mobile"] as const;
 
 const categoryLabels: Record<string, string> = {
   cta: "CTA",
@@ -248,23 +245,42 @@ const categoryLabels: Record<string, string> = {
   mobile: "Mobile",
 };
 
-const CATEGORIES = ["cta", "copy", "trust", "ux", "speed", "mobile"] as const;
-
 function scoreColor(score: number) {
-  if (score >= 70) return "#4ade80";
-  if (score >= 40) return "#facc15";
-  return "#f87171";
+  if (score >= 70) return "#16a34a";
+  if (score >= 40) return "#d97706";
+  return "#dc2626";
 }
+
+function impactColor(impact: number) {
+  if (impact >= 7) return "#dc2626";
+  if (impact >= 4) return "#d97706";
+  return "#2563eb";
+}
+
+function truncate(str: string, max: number) {
+  if (str.length <= max) return str;
+  return str.slice(0, max - 1) + "\u2026";
+}
+
+const FREE_FINDINGS_LIMIT = 3;
 
 export default function AuditPdf({
   results,
   url,
   createdAt,
+  isFree = true,
 }: {
   results: AuditResults;
   url: string;
   createdAt: string;
+  isFree?: boolean;
 }) {
+  const visibleFindings = isFree
+    ? results.findings.slice(0, FREE_FINDINGS_LIMIT)
+    : results.findings;
+  const hiddenCount = isFree
+    ? Math.max(0, results.findings.length - FREE_FINDINGS_LIMIT)
+    : 0;
   const date = new Date(createdAt).toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
@@ -279,30 +295,34 @@ export default function AuditPdf({
     >
       <Page size="A4" style={styles.page}>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={styles.headerRow}>
           <Text style={styles.logo}>ConvertIQ</Text>
-          <Text style={styles.headerTitle}>Conversion Audit Report</Text>
-          <Text style={styles.headerUrl}>{url}</Text>
-          <Text style={{ ...styles.headerUrl, marginTop: 2 }}>
-            Generated {date}
-          </Text>
+          <View style={styles.headerRight}>
+            <Text style={styles.headerUrl}>{url}</Text>
+            <Text style={styles.headerUrl}>{date}</Text>
+          </View>
         </View>
 
-        {/* Score */}
-        <View style={styles.scoreRow}>
-          <View>
+        {/* Score + Summary */}
+        <View style={styles.scoreSection}>
+          <View style={styles.scoreLeft}>
             <Text
-              style={{ ...styles.scoreBig, color: scoreColor(results.overallScore) }}
+              style={{
+                ...styles.scoreBig,
+                color: scoreColor(results.overallScore),
+              }}
             >
               {results.overallScore}
             </Text>
             <Text style={styles.scoreLabel}>out of 100</Text>
           </View>
-          <Text style={styles.summary}>{results.summary}</Text>
+          <View style={styles.summaryBox}>
+            <Text style={styles.summaryText}>{results.summary}</Text>
+          </View>
         </View>
 
         {/* Category scores */}
-        <View style={styles.categoryGrid}>
+        <View style={styles.categoryRow}>
           {CATEGORIES.map((cat) => (
             <View key={cat} style={styles.categoryBox}>
               <Text
@@ -313,17 +333,19 @@ export default function AuditPdf({
               >
                 {results.categoryScores[cat]}
               </Text>
-              <Text style={styles.categoryName}>{cat}</Text>
+              <Text style={styles.categoryName}>
+                {categoryLabels[cat]}
+              </Text>
             </View>
           ))}
         </View>
 
-        {/* Rewritten headlines */}
+        {/* Suggested headlines */}
         {(results.rewrittenHeadline || results.rewrittenSubheadline) && (
           <View style={styles.headlineBox}>
-            <Text style={styles.headlineTitle}>✦ Suggested headline rewrites</Text>
+            <Text style={styles.headlineTitle}>Suggested Rewrites</Text>
             {results.rewrittenHeadline && (
-              <View style={{ marginBottom: 8 }}>
+              <View>
                 <Text style={styles.headlineLabel}>Headline</Text>
                 <Text style={styles.headlineText}>
                   &quot;{results.rewrittenHeadline}&quot;
@@ -333,7 +355,7 @@ export default function AuditPdf({
             {results.rewrittenSubheadline && (
               <View>
                 <Text style={styles.headlineLabel}>Subheadline</Text>
-                <Text style={{ ...styles.headlineText, color: "#fafafa" }}>
+                <Text style={styles.headlineText}>
                   &quot;{results.rewrittenSubheadline}&quot;
                 </Text>
               </View>
@@ -341,11 +363,40 @@ export default function AuditPdf({
           </View>
         )}
 
-        {/* Findings */}
-        <Text style={styles.sectionTitle}>Findings</Text>
-        {results.findings.map((finding) => (
-          <View key={finding.id} style={styles.findingCard} wrap={false}>
-            <View style={styles.findingMeta}>
+        {/* Findings table */}
+        <Text style={styles.sectionTitle}>
+          {isFree
+            ? `Top ${FREE_FINDINGS_LIMIT} of ${results.findings.length} Findings`
+            : `Findings (${results.findings.length})`}
+        </Text>
+
+        {/* Table header */}
+        <View style={styles.tableHeader}>
+          <View style={styles.colSeverity}>
+            <Text style={styles.thText}>Severity</Text>
+          </View>
+          <View style={styles.colCategory}>
+            <Text style={styles.thText}>Area</Text>
+          </View>
+          <View style={styles.colTitle}>
+            <Text style={styles.thText}>Finding & Recommendation</Text>
+          </View>
+          <View style={styles.colImpact}>
+            <Text style={styles.thText}>Impact</Text>
+          </View>
+        </View>
+
+        {/* Table rows */}
+        {visibleFindings.map((finding, idx) => (
+          <View
+            key={finding.id}
+            style={{
+              ...styles.tableRow,
+              ...(idx % 2 === 1 ? styles.tableRowAlt : {}),
+            }}
+            wrap={false}
+          >
+            <View style={styles.colSeverity}>
               <Text
                 style={
                   finding.severity === "critical"
@@ -357,35 +408,88 @@ export default function AuditPdf({
               >
                 {finding.severity.toUpperCase()}
               </Text>
-              <Text style={styles.findingCategory}>
+            </View>
+            <View style={styles.colCategory}>
+              <Text style={styles.cellText}>
                 {categoryLabels[finding.category] || finding.category}
               </Text>
-              <Text style={styles.findingImpact}>
-                Impact: {finding.impactScore}/10
+            </View>
+            <View style={styles.colTitle}>
+              <Text style={styles.cellTitle}>{finding.title}</Text>
+              <Text style={styles.cellRec}>
+                {truncate(finding.recommendation, 120)}
               </Text>
             </View>
-            <Text style={styles.findingTitle}>{finding.title}</Text>
-            <Text style={styles.findingDesc}>{finding.description}</Text>
-            <View style={styles.recBox}>
-              <Text style={styles.recLabel}>Recommendation</Text>
-              <Text style={styles.recText}>{finding.recommendation}</Text>
-            </View>
-            {finding.rewrittenCopy && (
-              <View style={{ ...styles.copyBox, marginTop: 6 }}>
-                <Text style={styles.copyLabel}>Suggested copy</Text>
-                <Text style={styles.copyText}>
-                  &quot;{finding.rewrittenCopy}&quot;
-                </Text>
+            <View style={styles.colImpact}>
+              <View style={styles.impactBar}>
+                <View
+                  style={{
+                    ...styles.impactFill,
+                    width: `${finding.impactScore * 10}%`,
+                    backgroundColor: impactColor(finding.impactScore),
+                  }}
+                />
               </View>
-            )}
+              <Text style={styles.impactText}>
+                {finding.impactScore}/10
+              </Text>
+            </View>
           </View>
         ))}
 
+        {/* Upgrade CTA for free users */}
+        {hiddenCount > 0 && (
+          <View
+            style={{
+              backgroundColor: "#f5f3ff",
+              borderRadius: 6,
+              padding: 16,
+              marginTop: 12,
+              alignItems: "center",
+              border: "1px solid #ddd6fe",
+            }}
+            wrap={false}
+          >
+            <Text
+              style={{
+                fontSize: 12,
+                fontFamily: "Helvetica-Bold",
+                color: "#7c3aed",
+                marginBottom: 4,
+              }}
+            >
+              +{hiddenCount} more findings available
+            </Text>
+            <Text
+              style={{
+                fontSize: 9,
+                color: "#71717a",
+                textAlign: "center",
+              }}
+            >
+              Upgrade to a full audit to unlock all findings, detailed
+              recommendations, and suggested copy rewrites.
+            </Text>
+            <Text
+              style={{
+                fontSize: 9,
+                fontFamily: "Helvetica-Bold",
+                color: "#7c3aed",
+                marginTop: 6,
+              }}
+            >
+              convertiq.com/pricing
+            </Text>
+          </View>
+        )}
+
         {/* Footer */}
         <View style={styles.footer} fixed>
-          <Text style={styles.footerText}>ConvertIQ — convertiq.com</Text>
           <Text style={styles.footerText}>
-            Report expires 90 days from generation
+            ConvertIQ — Conversion Audit Report
+          </Text>
+          <Text style={styles.footerText}>
+            Generated {date} | convertiq.com
           </Text>
         </View>
       </Page>

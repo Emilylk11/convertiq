@@ -16,6 +16,21 @@ const CATEGORIES: AuditFinding["category"][] = [
   "mobile",
 ];
 
+const categoryLabels: Record<string, string> = {
+  cta: "CTA",
+  copy: "Copy",
+  trust: "Trust",
+  ux: "UX",
+  speed: "Speed",
+  mobile: "Mobile",
+};
+
+function scoreColor(score: number) {
+  if (score >= 70) return "text-green-400";
+  if (score >= 40) return "text-yellow-400";
+  return "text-red-400";
+}
+
 export default function AuditReportGated({
   results,
   url,
@@ -56,10 +71,10 @@ export default function AuditReportGated({
             key={cat}
             className="rounded-xl border border-border/50 bg-surface/50 p-3 sm:p-4 text-center"
           >
-            <div className="text-lg sm:text-xl font-bold text-foreground">
+            <div className={`text-lg sm:text-xl font-bold ${scoreColor(results.categoryScores[cat])}`}>
               {results.categoryScores[cat]}
             </div>
-            <div className="text-xs text-muted capitalize mt-1">{cat}</div>
+            <div className="text-xs text-muted mt-1 uppercase">{categoryLabels[cat]}</div>
           </div>
         ))}
       </div>
@@ -126,14 +141,14 @@ export default function AuditReportGated({
                 {hiddenCount} more finding{hiddenCount > 1 ? "s" : ""} available
               </h3>
               <p className="text-muted text-sm mb-5 max-w-sm mx-auto">
-                Create a free account to unlock the full report with all
-                findings, recommendations, and copy rewrites.
+                Upgrade to a full audit to unlock all findings, detailed
+                recommendations, and copy rewrites.
               </p>
               <a
-                href="/?signup=true"
+                href="/pricing"
                 className="inline-block rounded-xl bg-gradient-to-r from-accent to-accent-dim px-8 py-3.5 text-base font-semibold text-white hover:opacity-90 transition-opacity"
               >
-                Sign Up Free to Unlock
+                Unlock Full Report
               </a>
             </div>
           </div>

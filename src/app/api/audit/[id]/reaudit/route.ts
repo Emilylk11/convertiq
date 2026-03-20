@@ -28,7 +28,10 @@ export async function POST(
 
   const record = original as Pick<AuditRecord, "url" | "email" | "audit_type">;
 
-  // Create a new audit record
+  // Create a new audit record (expires 90 days from now)
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 90);
+
   const { data: newAudit, error: insertError } = await supabase
     .from("audits")
     .insert({
@@ -36,6 +39,7 @@ export async function POST(
       email: record.email,
       audit_type: record.audit_type,
       status: "pending",
+      expires_at: expiresAt.toISOString(),
     })
     .select("id")
     .single();

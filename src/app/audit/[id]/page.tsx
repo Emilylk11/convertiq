@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import type { AuditRecord } from "@/lib/types";
 import AuditReportGated from "@/components/AuditReportGated";
 import AuditReportPolling from "./AuditReportPolling";
+import MobileNav from "@/components/MobileNav";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default async function AuditPage({
   params,
@@ -37,7 +39,19 @@ export default async function AuditPage({
               Convert<span className="text-accent-bright">IQ</span>
             </span>
           </a>
+          <div className="hidden sm:flex items-center gap-8 text-sm text-muted">
+            <a href="/#how-it-works" className="hover:text-foreground transition-colors">
+              How It Works
+            </a>
+            <a href="/examples" className="hover:text-foreground transition-colors">
+              Examples
+            </a>
+            <a href="/pricing" className="hover:text-foreground transition-colors">
+              Pricing
+            </a>
+          </div>
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             {record.status === "completed" && (
               <a
                 href={`/api/audit/${record.id}/pdf`}
@@ -68,6 +82,7 @@ export default async function AuditPage({
             >
               New Audit
             </a>
+            <MobileNav />
           </div>
         </div>
       </nav>
