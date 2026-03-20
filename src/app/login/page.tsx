@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import LoginForm from "./LoginForm";
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -37,7 +38,9 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <LoginForm />
+          <Suspense fallback={<div className="text-center text-muted text-sm">Loading…</div>}>
+            <LoginForm />
+          </Suspense>
 
           <p className="mt-8 text-center text-xs text-muted/60">
             Don&apos;t have an account? One will be created automatically.

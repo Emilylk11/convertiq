@@ -77,10 +77,10 @@ export default async function AuditPage({
               </a>
             )}
             <a
-              href="/#free-audit"
+              href="/pricing"
               className="rounded-full bg-accent px-4 sm:px-5 py-2 text-sm font-medium text-white hover:bg-accent-bright transition-colors"
             >
-              New Audit
+              Sign Up Now
             </a>
             <MobileNav />
           </div>

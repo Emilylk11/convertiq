@@ -1,11 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "sent" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect") || "/dashboard";
+  const authError = searchParams.get("error");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -16,7 +20,7 @@ export default function LoginForm() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, redirect }),
       });
 
       const data = await res.json();
@@ -59,6 +63,14 @@ export default function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {authError && (
+        <div className="rounded-xl border border-red-400/30 bg-red-400/10 p-3 text-center">
+          <p className="text-sm text-red-400">
+            Sign-in link expired or was invalid. Please try again.
+          </p>
+        </div>
+      )}
+
       <div>
         <label htmlFor="email" className="block text-sm font-medium mb-1.5">
           Email address

@@ -29,7 +29,19 @@ create table public.credits (
   updated_at timestamptz not null default now()
 );
 
+-- Credit transactions table (payment log)
+create table public.credit_transactions (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  amount integer not null,
+  type text not null default 'purchase' check (type in ('purchase', 'deduction', 'refund')),
+  source text,
+  order_id text,
+  created_at timestamptz not null default now()
+);
+
 -- Indexes
+create index idx_credit_transactions_user_id on public.credit_transactions(user_id);
 create index idx_audits_email on public.audits(email);
 create index idx_audits_user_id on public.audits(user_id);
 create index idx_audits_share_token on public.audits(share_token);
@@ -53,6 +65,15 @@ create policy "Users see own credits" on public.credits
 
 -- Service role manages credits
 create policy "Service can manage credits" on public.credits
+  for all using (true);
+
+-- Credit transactions RLS
+alter table public.credit_transactions enable row level security;
+
+create policy "Users see own transactions" on public.credit_transactions
+  for select using (user_id = auth.uid());
+
+create policy "Service can manage transactions" on public.credit_transactions
   for all using (true);
 
 -- Updated_at trigger

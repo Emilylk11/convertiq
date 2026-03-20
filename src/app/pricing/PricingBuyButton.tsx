@@ -30,7 +30,7 @@ export default function PricingBuyButton({
       if (!res.ok) {
         // If not authenticated, redirect to login
         if (res.status === 401) {
-          window.location.href = "/login";
+          window.location.href = "/login?redirect=/pricing";
           return;
         }
         setError(data.error || "Something went wrong");

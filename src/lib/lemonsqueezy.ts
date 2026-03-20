@@ -10,9 +10,9 @@ export const LEMONSQUEEZY_STORE_ID = process.env.LEMONSQUEEZY_STORE_ID!;
 // Set these in .env.local once you create products in Lemon Squeezy
 // Uses NEXT_PUBLIC_ prefix so same IDs work on both client and server
 export const VARIANT_CREDIT_MAP: Record<string, number> = {
-  [process.env.NEXT_PUBLIC_LEMONSQUEEZY_VARIANT_STARTER || "starter"]: 3,
-  [process.env.NEXT_PUBLIC_LEMONSQUEEZY_VARIANT_GROWTH || "growth"]: 10,
-  [process.env.NEXT_PUBLIC_LEMONSQUEEZY_VARIANT_AGENCY || "agency"]: 30,
+  [process.env.LEMONSQUEEZY_VARIANT_STARTER || "starter"]: 3,
+  [process.env.LEMONSQUEEZY_VARIANT_GROWTH || "growth"]: 10,
+  [process.env.LEMONSQUEEZY_VARIANT_AGENCY || "agency"]: 30,
 };
 
 // ─── Checkout URL generator ───────────────────────────

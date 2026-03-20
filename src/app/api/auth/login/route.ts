@@ -3,7 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
   try {
-    const { email } = (await request.json()) as { email?: string };
+    const { email, redirect } = (await request.json()) as {
+      email?: string;
+      redirect?: string;
+    };
 
     if (!email) {
       return NextResponse.json({ error: "Email required" }, { status: 400 });
@@ -11,11 +14,13 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient();
 
-    // Use magic link (passwordless) login
+    // Where to send the user after they click the magic link
+    const next = redirect || "/dashboard";
+
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/dashboard`,
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=${encodeURIComponent(next)}`,
       },
     });
 

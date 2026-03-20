@@ -30,10 +30,10 @@ export default function Home() {
           <div className="flex items-center gap-3">
             <ThemeToggle />
             <a
-              href="#free-audit"
+              href="/login"
               className="rounded-full bg-accent px-4 sm:px-5 py-2 text-sm font-medium text-white hover:bg-accent-bright transition-colors"
             >
-              Get Free Audit
+              Sign In
             </a>
             <MobileNav />
           </div>
