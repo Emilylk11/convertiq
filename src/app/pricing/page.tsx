@@ -72,6 +72,31 @@ const TIERS = [
   },
 ];
 
+const CREDIT_TOPUPS = [
+  {
+    credits: 5,
+    price: 19,
+    perCredit: "3.80",
+    savings: null,
+    variantId: process.env.NEXT_PUBLIC_LEMONSQUEEZY_VARIANT_CREDITS_5 || "",
+  },
+  {
+    credits: 15,
+    price: 49,
+    perCredit: "3.27",
+    savings: "14",
+    popular: true,
+    variantId: process.env.NEXT_PUBLIC_LEMONSQUEEZY_VARIANT_CREDITS_15 || "",
+  },
+  {
+    credits: 50,
+    price: 129,
+    perCredit: "2.58",
+    savings: "32",
+    variantId: process.env.NEXT_PUBLIC_LEMONSQUEEZY_VARIANT_CREDITS_50 || "",
+  },
+];
+
 const AUDIT_TYPES = [
   {
     name: "Landing Page Audit",
@@ -212,8 +237,132 @@ export default async function PricingPage() {
           </p>
         </section>
 
-        {/* Pricing cards */}
+        {/* ROI Section */}
+        <section className="mx-auto max-w-4xl px-4 sm:px-6 pb-12 sm:pb-16">
+          <div className="rounded-2xl border border-green-500/20 bg-green-500/5 p-6 sm:p-8">
+            <div className="text-center mb-6">
+              <h2 className="text-xl sm:text-2xl font-bold mb-2">
+                Why this pays for itself{" "}
+                <span className="text-green-400">instantly</span>
+              </h2>
+              <p className="text-sm text-muted max-w-xl mx-auto">
+                A single finding from a ConvertIQ audit can generate thousands in new monthly revenue.
+              </p>
+            </div>
+
+            {/* The math */}
+            <div className="grid sm:grid-cols-3 gap-4 mb-6">
+              <div className="rounded-xl bg-background/50 border border-border/30 p-4 text-center">
+                <p className="text-xs text-muted uppercase tracking-wider mb-1">Your page gets</p>
+                <p className="text-2xl font-bold">10,000</p>
+                <p className="text-xs text-muted">monthly visitors</p>
+              </div>
+              <div className="rounded-xl bg-background/50 border border-border/30 p-4 text-center">
+                <p className="text-xs text-muted uppercase tracking-wider mb-1">One CRO fix adds</p>
+                <p className="text-2xl font-bold text-green-400">+1%</p>
+                <p className="text-xs text-muted">conversion rate lift</p>
+              </div>
+              <div className="rounded-xl bg-background/50 border border-border/30 p-4 text-center">
+                <p className="text-xs text-muted uppercase tracking-wider mb-1">That&apos;s an extra</p>
+                <p className="text-2xl font-bold text-green-400">$5,000</p>
+                <p className="text-xs text-muted">per month in revenue*</p>
+              </div>
+            </div>
+
+            {/* Comparison */}
+            <div className="rounded-xl bg-background/50 border border-border/30 p-4 sm:p-5">
+              <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-3 text-center">How ConvertIQ compares</p>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="text-red-400">✕</span>
+                    <span className="text-muted">CRO agency retainer</span>
+                  </div>
+                  <span className="font-semibold text-red-400">$2,000–$10,000/mo</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="text-red-400">✕</span>
+                    <span className="text-muted">Freelance CRO consultant</span>
+                  </div>
+                  <span className="font-semibold text-red-400">$150–$500/audit</span>
+                </div>
+                <div className="border-t border-border/30 my-2" />
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-400">✓</span>
+                    <span className="font-medium">ConvertIQ audit</span>
+                  </div>
+                  <span className="font-bold text-green-400">$2.58–$3.80/audit</span>
+                </div>
+              </div>
+            </div>
+
+            <p className="text-[10px] text-muted/50 text-center mt-3">
+              *Based on $50 avg. order value. Your results will vary based on traffic, industry, and implementation.
+            </p>
+          </div>
+        </section>
+
+        {/* Credit Top-Ups for logged-in users */}
+        {isLoggedIn && userTier !== "free" && (
+          <section className="mx-auto max-w-4xl px-4 sm:px-6 pb-12 sm:pb-16">
+            <div className="text-center mb-6">
+              <h2 className="text-xl sm:text-2xl font-bold tracking-tight mb-2">
+                Need more credits?
+              </h2>
+              <p className="text-sm text-muted">
+                Top up anytime. Credits stack with your existing balance of{" "}
+                <span className="text-accent-bright font-semibold">{balance}</span> and never expire.
+              </p>
+            </div>
+            <div className="grid sm:grid-cols-3 gap-4">
+              {CREDIT_TOPUPS.map((pack) => (
+                <div
+                  key={pack.credits}
+                  className={`relative rounded-2xl border p-6 flex flex-col ${
+                    pack.popular
+                      ? "border-accent bg-surface shadow-lg shadow-accent/10"
+                      : "border-border/50 bg-surface/50"
+                  }`}
+                >
+                  {pack.popular && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-accent px-4 py-1 text-xs font-semibold text-white">
+                      Most Popular
+                    </div>
+                  )}
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold">{pack.credits} Credits</h3>
+                    <p className="text-xs text-muted mt-0.5">
+                      ${pack.perCredit} per audit
+                      {pack.savings && (
+                        <span className="text-green-400 ml-1">— save {pack.savings}%</span>
+                      )}
+                    </p>
+                  </div>
+                  <div className="mb-5">
+                    <span className="text-3xl font-bold">${pack.price}</span>
+                    <span className="text-muted text-sm ml-1">one-time</span>
+                  </div>
+                  <PricingBuyButton
+                    label={`Buy ${pack.credits} Credits`}
+                    popular={pack.popular || false}
+                    variantId={pack.variantId}
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Tier Packages */}
         <section className="mx-auto max-w-6xl px-4 sm:px-6 pb-16 sm:pb-24">
+          {isLoggedIn && userTier !== "free" && (
+            <div className="text-center mb-8">
+              <p className="text-xs text-muted uppercase tracking-wider font-semibold mb-1">Or upgrade your plan</p>
+              <p className="text-sm text-muted">Switch tiers to unlock additional features</p>
+            </div>
+          )}
           <div className="grid sm:grid-cols-3 gap-4 sm:gap-6">
             {TIERS.map((tier) => (
               <div

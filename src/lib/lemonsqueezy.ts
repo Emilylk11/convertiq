@@ -8,11 +8,17 @@ export const LEMONSQUEEZY_STORE_ID = process.env.LEMONSQUEEZY_STORE_ID!;
 
 // Map variant IDs to credit amounts
 // Set these in .env.local once you create products in Lemon Squeezy
-// Uses NEXT_PUBLIC_ prefix so same IDs work on both client and server
+// Tier packages (unlock features + credits)
+// Credit top-ups (just credits, for existing users)
 export const VARIANT_CREDIT_MAP: Record<string, number> = {
+  // Tier packages
   [process.env.LEMONSQUEEZY_VARIANT_STARTER || "starter"]: 3,
   [process.env.LEMONSQUEEZY_VARIANT_GROWTH || "growth"]: 10,
   [process.env.LEMONSQUEEZY_VARIANT_AGENCY || "agency"]: 30,
+  // Credit top-ups
+  [process.env.LEMONSQUEEZY_VARIANT_CREDITS_5 || "credits_5"]: 5,
+  [process.env.LEMONSQUEEZY_VARIANT_CREDITS_15 || "credits_15"]: 15,
+  [process.env.LEMONSQUEEZY_VARIANT_CREDITS_50 || "credits_50"]: 50,
 };
 
 // ─── Checkout URL generator ───────────────────────────
