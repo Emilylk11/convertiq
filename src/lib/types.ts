@@ -44,6 +44,14 @@ export interface RevenueImpact {
   }[];
 }
 
+export interface CopyRewrite {
+  element: string; // headline, subheadline, cta_button, value_prop, section_heading, body_paragraph, meta_description, etc.
+  original: string;
+  rewritten: string;
+  framework: string; // PAS, AIDA, BAB, 4Us, FAB, StoryBrand, RiskReversal, SocialProof, Urgency, Specificity
+  rationale: string;
+}
+
 export interface AuditResults {
   overallScore: number;
   summary: string;
@@ -58,6 +66,7 @@ export interface AuditResults {
   };
   rewrittenHeadline?: string;
   rewrittenSubheadline?: string;
+  copyRewrites?: CopyRewrite[];
   revenueImpact?: RevenueImpact;
 }
 

@@ -6,6 +6,7 @@ import CopyButton from "./CopyButton";
 import ShareButton from "./ShareButton";
 import ReAuditButton from "./ReAuditButton";
 import RevenueImpactSection from "./RevenueImpact";
+import CopyRewritesSection from "./CopyRewrites";
 
 const FREE_VISIBLE_COUNT = 2;
 
@@ -147,6 +148,14 @@ export default function AuditReportGated({
             </div>
           )}
         </div>
+      )}
+
+      {/* Copy Rewrites */}
+      {results.copyRewrites && results.copyRewrites.length > 0 && (
+        <CopyRewritesSection
+          rewrites={results.copyRewrites}
+          hasFullAccess={hasFullAccess}
+        />
       )}
 
       {/* Visible findings */}

@@ -27,7 +27,7 @@ export async function runLandingPageAudit(
 
   const message = await anthropic.messages.create({
     model: "claude-sonnet-4-6",
-    max_tokens: 4096,
+    max_tokens: 6000,
     temperature: 0.3,
     system: LANDING_PAGE_AUDIT_SYSTEM_PROMPT,
     messages: [
