@@ -24,6 +24,24 @@ export interface AuditFinding {
   recommendation: string;
   impactScore: number;
   rewrittenCopy?: string;
+  estimatedConversionLift?: number; // e.g. 2.5 means +2.5% lift if fixed
+}
+
+export interface RevenueImpact {
+  monthlyTraffic: number;
+  avgOrderValue: number;
+  currentEstimatedConversionRate: number; // e.g. 2.0 means 2%
+  potentialConversionRate: number; // after fixes
+  currentMonthlyRevenue: number;
+  potentialMonthlyRevenue: number;
+  monthlyRevenueGap: number;
+  annualRevenueGap: number;
+  topCostlyIssues: {
+    findingId: string;
+    title: string;
+    estimatedMonthlyLoss: number;
+    conversionLift: number;
+  }[];
 }
 
 export interface AuditResults {
@@ -40,6 +58,7 @@ export interface AuditResults {
   };
   rewrittenHeadline?: string;
   rewrittenSubheadline?: string;
+  revenueImpact?: RevenueImpact;
 }
 
 export interface AuditRecord {

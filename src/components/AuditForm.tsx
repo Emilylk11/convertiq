@@ -45,6 +45,8 @@ export default function AuditForm() {
   const [trafficType, setTrafficType] = useState("");
   const [industry, setIndustry] = useState("");
   const [audience, setAudience] = useState("");
+  const [monthlyTraffic, setMonthlyTraffic] = useState("");
+  const [avgOrderValue, setAvgOrderValue] = useState("");
   const [showContext, setShowContext] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -86,6 +88,8 @@ export default function AuditForm() {
             trafficType: trafficType || undefined,
             industry: industry || undefined,
             audience: audience || undefined,
+            monthlyTraffic: monthlyTraffic ? parseInt(monthlyTraffic, 10) : undefined,
+            avgOrderValue: avgOrderValue ? parseFloat(avgOrderValue) : undefined,
           },
         }),
       });
@@ -231,6 +235,48 @@ export default function AuditForm() {
                 disabled={loading}
                 className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all disabled:opacity-50"
               />
+            </div>
+
+            <div className="pt-2 border-t border-border/30">
+              <p className="text-xs font-medium text-accent-bright mb-0.5">
+                Revenue Impact Analysis
+              </p>
+              <p className="text-xs text-muted/60 mb-3">
+                Add your traffic &amp; revenue data to see how much each issue is costing you.
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="monthly-traffic" className="block text-xs text-muted mb-1">
+                    Monthly visitors
+                  </label>
+                  <input
+                    id="monthly-traffic"
+                    type="number"
+                    min="0"
+                    value={monthlyTraffic}
+                    onChange={(e) => setMonthlyTraffic(e.target.value)}
+                    placeholder="e.g. 10000"
+                    disabled={loading}
+                    className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all disabled:opacity-50"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="avg-order-value" className="block text-xs text-muted mb-1">
+                    Avg. order / deal value ($)
+                  </label>
+                  <input
+                    id="avg-order-value"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={avgOrderValue}
+                    onChange={(e) => setAvgOrderValue(e.target.value)}
+                    placeholder="e.g. 50"
+                    disabled={loading}
+                    className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all disabled:opacity-50"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         )}

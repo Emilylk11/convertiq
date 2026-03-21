@@ -36,9 +36,15 @@ export default function FindingCard({
         <span className="text-xs text-muted font-mono uppercase">
           {categoryLabels[finding.category]}
         </span>
-        <span className="ml-auto text-xs text-muted">
-          Impact: {finding.impactScore}/10
-        </span>
+        {finding.estimatedConversionLift && finding.estimatedConversionLift > 0 ? (
+          <span className="ml-auto text-xs text-green-400 font-medium">
+            +{finding.estimatedConversionLift}% conv. if fixed
+          </span>
+        ) : (
+          <span className="ml-auto text-xs text-muted">
+            Impact: {finding.impactScore}/10
+          </span>
+        )}
       </div>
 
       <h3 className="text-base font-semibold mb-2">{finding.title}</h3>

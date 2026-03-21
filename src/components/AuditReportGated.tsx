@@ -5,6 +5,7 @@ import FindingCard from "./FindingCard";
 import CopyButton from "./CopyButton";
 import ShareButton from "./ShareButton";
 import ReAuditButton from "./ReAuditButton";
+import RevenueImpactSection from "./RevenueImpact";
 
 const FREE_VISIBLE_COUNT = 2;
 
@@ -87,6 +88,14 @@ export default function AuditReportGated({
           </a>
         )}
       </div>
+
+      {/* Revenue Impact */}
+      {results.revenueImpact && (
+        <RevenueImpactSection
+          impact={results.revenueImpact}
+          hasFullAccess={hasFullAccess}
+        />
+      )}
 
       {/* Category scores */}
       <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3 mb-8">

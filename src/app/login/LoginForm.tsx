@@ -96,7 +96,7 @@ export default function LoginForm() {
         disabled={status === "loading"}
         className="w-full rounded-xl bg-gradient-to-r from-accent to-accent-dim px-6 py-3 text-sm font-semibold text-white hover:opacity-90 transition-opacity disabled:opacity-50"
       >
-        {status === "loading" ? "Sending link…" : "Send Magic Link"}
+        {status === "loading" ? "Sending login link…" : "Continue with Email"}
       </button>
     </form>
   );

@@ -16,7 +16,8 @@ You MUST respond with valid JSON matching this exact schema — no markdown, no 
       "description": "<what the issue is and why it hurts conversions>",
       "recommendation": "<specific, actionable fix>",
       "impactScore": <number 1-10>,
-      "rewrittenCopy": "<suggested replacement text, if applicable, otherwise omit>"
+      "rewrittenCopy": "<suggested replacement text, if applicable, otherwise omit>",
+      "estimatedConversionLift": <number 0.1-5.0, estimated percentage point conversion rate improvement if this issue is fixed>
     }
   ],
   "categoryScores": {
@@ -36,6 +37,7 @@ Rules:
 - Be specific and reference actual content from the page
 - For each finding, suggest a concrete fix — not generic advice
 - If you suggest rewritten copy, make it compelling and conversion-focused
+- For estimatedConversionLift: estimate the realistic percentage point improvement in conversion rate if this single issue is fixed. Critical issues typically cause 1-5% lift, warnings 0.3-2%, info 0.1-0.5%. Be realistic and conservative — the total across all findings should not exceed 8-15% combined.
 - Score harshly but fairly — most pages score 30-70
 - Categories: cta (calls to action), copy (headlines, body text, value props), trust (social proof, testimonials, badges), ux (layout, navigation, friction), speed (perceived performance), mobile (mobile-specific issues)
 - Severity: critical (major conversion killer), warning (notable issue), info (nice-to-have improvement)
@@ -59,6 +61,8 @@ interface AuditContext {
   trafficType?: string;
   industry?: string;
   audience?: string;
+  monthlyTraffic?: number;
+  avgOrderValue?: number;
 }
 
 const TRAFFIC_LABELS: Record<string, string> = {

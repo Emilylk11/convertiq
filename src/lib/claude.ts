@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import type { ScrapedPageData, AuditResults } from "./types";
+import type { ScrapedPageData, AuditResults, RevenueImpact } from "./types";
 import {
   LANDING_PAGE_AUDIT_SYSTEM_PROMPT,
   buildAuditUserMessage,
@@ -9,6 +9,8 @@ export interface AuditContext {
   trafficType?: string;
   industry?: string;
   audience?: string;
+  monthlyTraffic?: number;
+  avgOrderValue?: number;
 }
 
 export async function runLandingPageAudit(
@@ -58,5 +60,69 @@ export async function runLandingPageAudit(
     throw new Error("Invalid audit response structure");
   }
 
+  // Calculate revenue impact if traffic data provided
+  if (context?.monthlyTraffic && context?.avgOrderValue) {
+    parsed.revenueImpact = calculateRevenueImpact(
+      parsed,
+      context.monthlyTraffic,
+      context.avgOrderValue
+    );
+  }
+
   return parsed;
+}
+
+function calculateRevenueImpact(
+  results: AuditResults,
+  monthlyTraffic: number,
+  avgOrderValue: number
+): RevenueImpact {
+  // Estimate current conversion rate from the overall score
+  // Score 0-100 maps roughly to 0.5%-5% conversion rate
+  const currentEstimatedConversionRate = Math.max(
+    0.5,
+    (results.overallScore / 100) * 4.5 + 0.5
+  );
+
+  // Sum up all potential conversion lifts from findings
+  const totalPotentialLift = results.findings.reduce(
+    (sum, f) => sum + (f.estimatedConversionLift || 0),
+    0
+  );
+
+  const potentialConversionRate = Math.min(
+    currentEstimatedConversionRate + totalPotentialLift,
+    15 // cap at 15%
+  );
+
+  const currentMonthlyRevenue =
+    monthlyTraffic * (currentEstimatedConversionRate / 100) * avgOrderValue;
+  const potentialMonthlyRevenue =
+    monthlyTraffic * (potentialConversionRate / 100) * avgOrderValue;
+  const monthlyRevenueGap = potentialMonthlyRevenue - currentMonthlyRevenue;
+
+  // Build top costly issues
+  const topCostlyIssues = results.findings
+    .filter((f) => f.estimatedConversionLift && f.estimatedConversionLift > 0)
+    .map((f) => ({
+      findingId: f.id,
+      title: f.title,
+      conversionLift: f.estimatedConversionLift!,
+      estimatedMonthlyLoss:
+        monthlyTraffic * (f.estimatedConversionLift! / 100) * avgOrderValue,
+    }))
+    .sort((a, b) => b.estimatedMonthlyLoss - a.estimatedMonthlyLoss)
+    .slice(0, 5);
+
+  return {
+    monthlyTraffic,
+    avgOrderValue,
+    currentEstimatedConversionRate: Math.round(currentEstimatedConversionRate * 100) / 100,
+    potentialConversionRate: Math.round(potentialConversionRate * 100) / 100,
+    currentMonthlyRevenue: Math.round(currentMonthlyRevenue),
+    potentialMonthlyRevenue: Math.round(potentialMonthlyRevenue),
+    monthlyRevenueGap: Math.round(monthlyRevenueGap),
+    annualRevenueGap: Math.round(monthlyRevenueGap * 12),
+    topCostlyIssues,
+  };
 }

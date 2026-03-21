@@ -17,6 +17,8 @@ export async function POST(request: NextRequest) {
         trafficType?: string;
         industry?: string;
         audience?: string;
+        monthlyTraffic?: number;
+        avgOrderValue?: number;
       };
     };
 

@@ -31,10 +31,10 @@ export default function LoginPage() {
         <div className="w-full max-w-sm">
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold tracking-tight mb-2">
-              Sign in to ConvertIQ
+              Welcome to ConvertIQ
             </h1>
             <p className="text-sm text-muted">
-              Enter your email and we&apos;ll send you a magic link.
+              Sign in to your account or create a new one — just enter your email.
             </p>
           </div>
 
@@ -42,9 +42,19 @@ export default function LoginPage() {
             <LoginForm />
           </Suspense>
 
-          <p className="mt-8 text-center text-xs text-muted/60">
-            Don&apos;t have an account? One will be created automatically.
-          </p>
+          <div className="mt-8 space-y-3">
+            <p className="text-center text-xs text-muted/60">
+              New here? Your account is created automatically on first sign-in.
+            </p>
+            <div className="flex items-center gap-3 text-xs text-muted/40">
+              <span className="flex-1 h-px bg-border/50" />
+              <span>No password needed</span>
+              <span className="flex-1 h-px bg-border/50" />
+            </div>
+            <p className="text-center text-xs text-muted/40">
+              We&apos;ll send a secure link to your email — click it to sign in instantly.
+            </p>
+          </div>
         </div>
       </main>
     </div>
