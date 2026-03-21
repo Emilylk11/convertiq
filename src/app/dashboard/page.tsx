@@ -7,6 +7,7 @@ import type { AuditRecord } from "@/lib/types";
 import DashboardMobileNav from "@/components/DashboardMobileNav";
 import ThemeToggle from "@/components/ThemeToggle";
 import SignOutButton from "@/components/SignOutButton";
+import SupportButton from "@/components/SupportButton";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -419,6 +420,9 @@ export default async function DashboardPage({
           </div>
         )}
       </main>
+
+      {/* Floating support button */}
+      <SupportButton />
     </div>
   );
 }

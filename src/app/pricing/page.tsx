@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
+import { createClient } from "@/lib/supabase/server";
+import { getUserTier, type UserTier } from "@/lib/tiers";
+import { getCreditBalance } from "@/lib/credits";
 import MobileNav from "@/components/MobileNav";
+import DashboardMobileNav from "@/components/DashboardMobileNav";
 import ThemeToggle from "@/components/ThemeToggle";
+import SignOutButton from "@/components/SignOutButton";
+import SupportButton from "@/components/SupportButton";
 import PricingBuyButton from "./PricingBuyButton";
 
 export const metadata: Metadata = {
@@ -70,42 +76,65 @@ const AUDIT_TYPES = [
   {
     name: "Landing Page Audit",
     desc: "CTA placement, copy, trust signals, UX, speed, mobile — the full conversion teardown.",
-    icon: "🎯",
+    icon: "&#127919;",
     available: true,
   },
   {
     name: "Email Sequence Audit",
     desc: "Subject lines, open-rate signals, CTA clarity, and sequence flow analysis.",
-    icon: "📧",
+    icon: "&#128231;",
     available: false,
   },
   {
     name: "Ad Copy Audit",
     desc: "Hook strength, offer clarity, audience alignment, and click-through optimisation.",
-    icon: "📢",
+    icon: "&#128226;",
     available: false,
   },
   {
     name: "Checkout Flow Audit",
     desc: "Cart abandonment signals, friction points, trust elements, and payment UX.",
-    icon: "🛒",
+    icon: "&#128722;",
     available: false,
   },
   {
     name: "Full Funnel Audit",
     desc: "End-to-end analysis from ad to landing page to checkout — every conversion leak.",
-    icon: "🔄",
+    icon: "&#128260;",
     available: false,
   },
 ];
 
-export default function PricingPage() {
+export default async function PricingPage() {
+  // Check auth state for nav
+  let isLoggedIn = false;
+  let userTier: UserTier = "free";
+  let userEmail = "";
+  let balance = 0;
+
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      isLoggedIn = true;
+      userEmail = user.email || "";
+      const [tier, bal] = await Promise.all([
+        getUserTier(user.id).catch(() => "free" as UserTier),
+        getCreditBalance(user.id).catch(() => 0),
+      ]);
+      userTier = tier;
+      balance = bal;
+    }
+  } catch {
+    // Not logged in
+  }
+
   return (
     <div className="min-h-full bg-background text-foreground">
       {/* Nav */}
       <nav className="border-b border-border/50 bg-background/80 backdrop-blur-xl sticky top-0 z-10">
         <div className="mx-auto max-w-6xl flex items-center justify-between px-4 sm:px-6 h-16">
-          <a href="/" className="flex items-center gap-2">
+          <a href={isLoggedIn ? "/dashboard" : "/"} className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-accent to-accent-dim flex items-center justify-center font-mono text-sm font-bold text-white shrink-0">
               C
             </div>
@@ -113,33 +142,51 @@ export default function PricingPage() {
               Convert<span className="text-accent-bright">IQ</span>
             </span>
           </a>
-          <div className="hidden sm:flex items-center gap-8 text-sm text-muted">
-            <a
-              href="/#how-it-works"
-              className="hover:text-foreground transition-colors"
-            >
-              How It Works
-            </a>
-            <a
-              href="/examples"
-              className="hover:text-foreground transition-colors"
-            >
-              Examples
-            </a>
-            <a href="/pricing" className="text-foreground">
-              Pricing
-            </a>
-          </div>
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            <a
-              href="/login"
-              className="rounded-full bg-accent px-4 sm:px-5 py-2 text-sm font-medium text-white hover:bg-accent-bright transition-colors"
-            >
-              Sign In
-            </a>
-            <MobileNav />
-          </div>
+
+          {isLoggedIn ? (
+            <>
+              <div className="hidden sm:flex items-center gap-6 text-sm text-muted">
+                <a href="/dashboard" className="hover:text-foreground transition-colors">Dashboard</a>
+                <a href="/dashboard/new-audit" className="hover:text-foreground transition-colors">Run Audit</a>
+                <a href="/pricing" className="text-foreground font-medium transition-colors">Buy Credits</a>
+                {(userTier === "growth" || userTier === "agency") && (
+                  <a href="/dashboard/competitors" className="hover:text-foreground transition-colors">Competitors</a>
+                )}
+                {userTier === "agency" && (
+                  <a href="/dashboard/bulk-audit" className="hover:text-foreground transition-colors">Bulk Audit</a>
+                )}
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-accent/10 border border-accent/20 px-3 py-1 text-xs font-medium text-accent-bright">
+                  {balance} credit{balance !== 1 ? "s" : ""}
+                </span>
+                <ThemeToggle />
+                <span className="hidden sm:inline text-xs text-muted truncate max-w-[120px]" title={userEmail}>
+                  {userEmail}
+                </span>
+                <SignOutButton />
+                <DashboardMobileNav tier={userTier} />
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="hidden sm:flex items-center gap-8 text-sm text-muted">
+                <a href="/#how-it-works" className="hover:text-foreground transition-colors">How It Works</a>
+                <a href="/examples" className="hover:text-foreground transition-colors">Examples</a>
+                <a href="/pricing" className="text-foreground">Pricing</a>
+              </div>
+              <div className="flex items-center gap-3">
+                <ThemeToggle />
+                <a
+                  href="/login"
+                  className="rounded-full bg-accent px-4 sm:px-5 py-2 text-sm font-medium text-white hover:bg-accent-bright transition-colors"
+                >
+                  Sign In
+                </a>
+                <MobileNav />
+              </div>
+            </>
+          )}
         </div>
       </nav>
 
@@ -158,7 +205,10 @@ export default function PricingPage() {
           </h1>
           <p className="text-muted text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
             Buy credits, run audits whenever you need them. Credits never
-            expire. Start with a free audit to see the quality first.
+            expire.{" "}
+            {isLoggedIn
+              ? `You currently have ${balance} credit${balance !== 1 ? "s" : ""}.`
+              : "Start with a free audit to see the quality first."}
           </p>
         </section>
 
@@ -235,14 +285,28 @@ export default function PricingPage() {
           {/* Free tier callout */}
           <div className="mt-8 text-center">
             <p className="text-sm text-muted">
-              Not sure yet?{" "}
-              <a
-                href="/#free-audit"
-                className="text-accent-bright hover:underline font-medium"
-              >
-                Try a free audit first
-              </a>{" "}
-              — no account required.
+              {isLoggedIn ? (
+                <>
+                  Want to test first?{" "}
+                  <a
+                    href="/dashboard/new-audit"
+                    className="text-accent-bright hover:underline font-medium"
+                  >
+                    Run an audit from your dashboard
+                  </a>
+                </>
+              ) : (
+                <>
+                  Not sure yet?{" "}
+                  <a
+                    href="/#free-audit"
+                    className="text-accent-bright hover:underline font-medium"
+                  >
+                    Try a free audit first
+                  </a>{" "}
+                  — no account required.
+                </>
+              )}
             </p>
           </div>
         </section>
@@ -253,7 +317,7 @@ export default function PricingPage() {
             <div className="text-center mb-10 sm:mb-14">
               <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-4">
                 Audit types{" "}
-                <span className="text-accent-bright">& roadmap</span>
+                <span className="text-accent-bright">&amp; roadmap</span>
               </h2>
               <p className="text-muted text-base sm:text-lg max-w-xl mx-auto">
                 Our Landing Page Audit is live. More audit types are in
@@ -272,7 +336,7 @@ export default function PricingPage() {
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="text-2xl">{type.icon}</span>
+                    <span className="text-2xl" dangerouslySetInnerHTML={{ __html: type.icon }} />
                     {!type.available && (
                       <span className="text-[10px] font-semibold uppercase tracking-wider text-muted bg-surface-light border border-border/50 rounded-full px-2 py-0.5">
                         Coming soon
@@ -288,7 +352,7 @@ export default function PricingPage() {
 
               {/* Roadmap placeholder */}
               <div className="rounded-2xl border border-dashed border-border/50 p-6 flex flex-col items-center justify-center text-center">
-                <div className="text-2xl mb-3">🚀</div>
+                <div className="text-2xl mb-3">&#128640;</div>
                 <h3 className="font-semibold mb-1.5">More on the roadmap</h3>
                 <p className="text-sm text-muted leading-relaxed">
                   SEO audit, competitor analysis, and A/B test recommendations
@@ -315,10 +379,10 @@ export default function PricingPage() {
               </a>
               , or reach out at{" "}
               <a
-                href="mailto:hello@convertiq.com"
+                href="mailto:support@convertiq.io"
                 className="text-accent-bright hover:underline font-medium"
               >
-                hello@convertiq.com
+                support@convertiq.io
               </a>
               .
             </p>
@@ -339,30 +403,11 @@ export default function PricingPage() {
               </span>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted">
-              <a
-                href="/examples"
-                className="hover:text-foreground transition-colors"
-              >
-                Examples
-              </a>
-              <a
-                href="/pricing"
-                className="hover:text-foreground transition-colors"
-              >
-                Pricing
-              </a>
-              <a
-                href="/faq"
-                className="hover:text-foreground transition-colors"
-              >
-                FAQ
-              </a>
-              <a href="/privacy" className="hover:text-foreground transition-colors">
-                Privacy
-              </a>
-              <a href="/terms" className="hover:text-foreground transition-colors">
-                Terms
-              </a>
+              <a href="/examples" className="hover:text-foreground transition-colors">Examples</a>
+              <a href="/pricing" className="hover:text-foreground transition-colors">Pricing</a>
+              <a href="/faq" className="hover:text-foreground transition-colors">FAQ</a>
+              <a href="/privacy" className="hover:text-foreground transition-colors">Privacy</a>
+              <a href="/terms" className="hover:text-foreground transition-colors">Terms</a>
             </div>
             <p className="text-xs sm:text-sm text-muted/60">
               &copy; 2026 ConvertIQ. All rights reserved.
@@ -370,6 +415,9 @@ export default function PricingPage() {
           </div>
         </div>
       </footer>
+
+      {/* Floating support button */}
+      <SupportButton />
     </div>
   );
 }
