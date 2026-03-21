@@ -8,6 +8,8 @@ import DashboardMobileNav from "@/components/DashboardMobileNav";
 import ThemeToggle from "@/components/ThemeToggle";
 import SignOutButton from "@/components/SignOutButton";
 import SupportButton from "@/components/SupportButton";
+import OnboardingBanner from "@/components/OnboardingBanner";
+import AuditHistoryClient from "@/components/AuditHistoryClient";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -66,7 +68,7 @@ export default async function DashboardPage({
         .select("id, url, audit_type, status, overall_score, created_at")
         .or(`user_id.eq.${user.id},email.eq.${user.email}`)
         .order("created_at", { ascending: false })
-        .limit(20),
+        .limit(50),
     ]);
     balance = bal;
     tier = userTier;
@@ -85,6 +87,28 @@ export default async function DashboardPage({
             completedAudits.filter((a) => a.overall_score).length
         )
       : null;
+
+  // Score trend for the most recently audited URL
+  const latestUrl = completedAudits.length > 0 ? completedAudits[0].url : null;
+  let latestUrlTrend: { current: number; previous: number } | null = null;
+  if (latestUrl) {
+    const urlAudits = completedAudits
+      .filter((a) => a.url === latestUrl && a.overall_score !== null)
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    if (urlAudits.length >= 2) {
+      latestUrlTrend = {
+        current: urlAudits[0].overall_score!,
+        previous: urlAudits[1].overall_score!,
+      };
+    }
+  }
+
+  // Count unique URLs that have been audited multiple times
+  const urlCounts = new Map<string, number>();
+  for (const a of completedAudits) {
+    urlCounts.set(a.url, (urlCounts.get(a.url) || 0) + 1);
+  }
+  const trackedUrls = [...urlCounts.entries()].filter(([, count]) => count >= 2).length;
 
   return (
     <div className="min-h-full bg-background text-foreground">
@@ -150,6 +174,14 @@ export default async function DashboardPage({
           </div>
         )}
 
+        {/* Onboarding for new users */}
+        <OnboardingBanner
+          hasAudits={audits.length > 0}
+          balance={balance}
+          tier={tier}
+          userName={user.email ?? undefined}
+        />
+
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-4 mb-10">
           <div>
@@ -170,7 +202,7 @@ export default async function DashboardPage({
         </div>
 
         {/* Stats cards */}
-        <div className="grid sm:grid-cols-3 gap-4 mb-10">
+        <div className="grid sm:grid-cols-4 gap-4 mb-10">
           <div className="rounded-2xl border border-border/50 bg-surface/50 p-6">
             <p className="text-xs text-muted uppercase tracking-wider mb-1">
               Credits remaining
@@ -193,9 +225,27 @@ export default async function DashboardPage({
             <p className="text-xs text-muted uppercase tracking-wider mb-1">
               Average score
             </p>
-            <p className="text-3xl font-bold">
+            <p className={`text-3xl font-bold ${avgScore !== null ? scoreColor(avgScore) : ""}`}>
               {avgScore !== null ? avgScore : "—"}
             </p>
+          </div>
+          <div className="rounded-2xl border border-border/50 bg-surface/50 p-6">
+            <p className="text-xs text-muted uppercase tracking-wider mb-1">
+              URLs tracked
+            </p>
+            <p className="text-3xl font-bold">{trackedUrls}</p>
+            {trackedUrls > 0 && latestUrlTrend && (
+              <p className="mt-2 text-xs">
+                <span className="text-muted">Latest: </span>
+                <span className={latestUrlTrend.current >= latestUrlTrend.previous ? "text-green-400" : "text-red-400"}>
+                  {latestUrlTrend.current > latestUrlTrend.previous ? "+" : ""}
+                  {latestUrlTrend.current - latestUrlTrend.previous} pts
+                </span>
+              </p>
+            )}
+            {trackedUrls === 0 && (
+              <p className="mt-3 text-xs text-muted">Re-audit a page to track progress</p>
+            )}
           </div>
         </div>
 
@@ -353,72 +403,17 @@ export default async function DashboardPage({
           </div>
         )}
 
-        {/* Audit history */}
-        <h2 className="text-lg font-semibold mb-4">Audit history</h2>
-        {audits.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border/50 p-10 text-center">
-            <div className="text-3xl mb-3">&#128269;</div>
-            <h3 className="text-lg font-semibold mb-2">No audits yet</h3>
-            <p className="text-sm text-muted mb-5 max-w-sm mx-auto">
-              Run your first audit to see it appear here.
-            </p>
-            <a
-              href="/dashboard/new-audit"
-              className="inline-block rounded-xl bg-gradient-to-r from-accent to-accent-dim px-8 py-3 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
-            >
-              Run an Audit &rarr;
-            </a>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {audits.map((audit) => (
-              <a
-                key={audit.id}
-                href={`/audit/${audit.id}`}
-                className="flex items-center gap-4 rounded-xl border border-border/50 bg-surface/30 p-4 hover:bg-surface/60 hover:border-border transition-all group"
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate group-hover:text-accent-bright transition-colors">
-                    {audit.url}
-                  </p>
-                  <p className="text-xs text-muted mt-0.5">
-                    {new Date(audit.created_at).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                    <span className="mx-1.5">&middot;</span>
-                    <span className="capitalize">{audit.audit_type} audit</span>
-                    <span className="mx-1.5">&middot;</span>
-                    <span className="capitalize">{audit.status}</span>
-                  </p>
-                </div>
-                {audit.overall_score !== null && (
-                  <div
-                    className={`text-xl font-bold ${scoreColor(audit.overall_score)}`}
-                  >
-                    {audit.overall_score}
-                  </div>
-                )}
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  className="text-muted shrink-0"
-                >
-                  <path
-                    d="M6 4l4 4-4 4"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </a>
-            ))}
-          </div>
-        )}
+        {/* Audit history — client component with search, filters, and score trends */}
+        <AuditHistoryClient
+          audits={audits.map((a) => ({
+            id: a.id,
+            url: a.url,
+            audit_type: a.audit_type,
+            status: a.status,
+            overall_score: a.overall_score,
+            created_at: a.created_at,
+          }))}
+        />
       </main>
 
       {/* Floating support button */}

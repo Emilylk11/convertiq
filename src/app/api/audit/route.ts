@@ -5,6 +5,7 @@ import { runLandingPageAudit } from "@/lib/claude";
 import { sendAuditEmail } from "@/lib/resend";
 import { getUserTier, hasPriorityProcessing } from "@/lib/tiers";
 import { deductCredit } from "@/lib/credits";
+import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
         isPriority = hasPriorityProcessing(tier);
         if (tier !== "free") {
           auditType = "full";
-          // Deduct credit for logged-in paid users
+          // Deduct credit for logged-in paid users (atomic operation)
           const hasCredit = await deductCredit(user.id);
           if (!hasCredit) {
             return NextResponse.json(
@@ -45,6 +46,23 @@ export async function POST(request: NextRequest) {
       }
     } catch {
       // Not logged in — free audit
+    }
+
+    // Rate limit — use user ID if logged in, fall back to IP
+    const rateLimitKey = userId
+      || request.headers.get("x-forwarded-for")
+      || request.headers.get("x-real-ip")
+      || "anonymous";
+    const rl = rateLimit(
+      `audit:${rateLimitKey}`,
+      RATE_LIMITS.audit.maxRequests,
+      RATE_LIMITS.audit.windowMs
+    );
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: "Too many requests. Please wait a moment before trying again." },
+        { status: 429 }
+      );
     }
 
     // Validate input

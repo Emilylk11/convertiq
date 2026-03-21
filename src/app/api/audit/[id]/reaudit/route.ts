@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { scrapeUrl } from "@/lib/scraper";
 import { runLandingPageAudit } from "@/lib/claude";
+import { getUserTier, canReaudit } from "@/lib/tiers";
+import { deductCredit } from "@/lib/credits";
+import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import type { AuditRecord } from "@/lib/types";
 
 export async function POST(
@@ -10,12 +13,59 @@ export async function POST(
 ) {
   const { id } = await params;
 
+  // 1. Require authentication
+  let userId: string;
+  try {
+    const authClient = await createClient();
+    const {
+      data: { user },
+    } = await authClient.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "Authentication required. Please sign in to re-audit." },
+        { status: 401 }
+      );
+    }
+    userId = user.id;
+  } catch {
+    return NextResponse.json(
+      { error: "Authentication required" },
+      { status: 401 }
+    );
+  }
+
+  // 2. Rate limit
+  const rl = rateLimit(
+    `reaudit:${userId}`,
+    RATE_LIMITS.reaudit.maxRequests,
+    RATE_LIMITS.reaudit.windowMs
+  );
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Please wait a moment before trying again." },
+      { status: 429 }
+    );
+  }
+
+  // 3. Check tier — re-audit requires Starter+
+  const tier = await getUserTier(userId);
+  if (!canReaudit(tier)) {
+    return NextResponse.json(
+      {
+        error:
+          "Re-audit requires a Starter plan or above. Purchase credits to unlock this feature.",
+      },
+      { status: 403 }
+    );
+  }
+
   const supabase = createAdminClient();
 
-  // Fetch original audit
+  // 4. Fetch original audit and verify ownership
   const { data: original, error: fetchError } = await supabase
     .from("audits")
-    .select("url, email, audit_type")
+    .select("url, email, audit_type, user_id")
     .eq("id", id)
     .single();
 
@@ -26,9 +76,29 @@ export async function POST(
     );
   }
 
-  const record = original as Pick<AuditRecord, "url" | "email" | "audit_type">;
+  const record = original as Pick<
+    AuditRecord,
+    "url" | "email" | "audit_type"
+  > & { user_id: string | null };
 
-  // Create a new audit record (expires 90 days from now)
+  // Verify the user owns this audit (or it's a free/anonymous audit they created by email)
+  if (record.user_id && record.user_id !== userId) {
+    return NextResponse.json(
+      { error: "You do not have permission to re-audit this report" },
+      { status: 403 }
+    );
+  }
+
+  // 5. Deduct 1 credit
+  const hasCredit = await deductCredit(userId);
+  if (!hasCredit) {
+    return NextResponse.json(
+      { error: "Insufficient credits. Please purchase more credits." },
+      { status: 402 }
+    );
+  }
+
+  // 6. Create a new audit record (expires 90 days from now)
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 90);
 
@@ -37,7 +107,8 @@ export async function POST(
     .insert({
       url: record.url,
       email: record.email,
-      audit_type: record.audit_type,
+      audit_type: "full",
+      user_id: userId,
       status: "pending",
       expires_at: expiresAt.toISOString(),
     })
@@ -51,7 +122,7 @@ export async function POST(
     );
   }
 
-  // Run audit asynchronously (fire and forget) so we can redirect immediately
+  // 7. Run audit asynchronously (fire and forget) so we can redirect immediately
   (async () => {
     try {
       const scrapedData = await scrapeUrl(record.url);

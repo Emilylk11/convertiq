@@ -28,6 +28,7 @@ export async function getCreditBalance(userId: string): Promise<number> {
 
 /**
  * Add credits to a user's balance (used after successful payment).
+ * Uses an atomic DB function to prevent race conditions.
  */
 export async function addCredits(
   userId: string,
@@ -35,43 +36,77 @@ export async function addCredits(
 ): Promise<number> {
   const supabase = createAdminClient();
 
-  // Ensure credits row exists
+  // Try atomic RPC first
+  const { data, error } = await supabase.rpc("add_credits", {
+    p_user_id: userId,
+    p_amount: amount,
+  });
+
+  if (!error && data !== null) {
+    return data as number;
+  }
+
+  // Fallback: ensure credits row exists, then update
+  console.warn("add_credits RPC not available, using fallback:", error?.message);
   const currentBalance = await getCreditBalance(userId);
 
-  const { data, error } = await supabase
+  const { data: updated, error: updateError } = await supabase
     .from("credits")
     .update({ balance: currentBalance + amount })
     .eq("user_id", userId)
     .select("balance")
     .single();
 
-  if (error) {
-    console.error("Error adding credits:", error);
+  if (updateError) {
+    console.error("Error adding credits:", updateError);
     throw new Error("Failed to add credits");
   }
 
-  return data.balance;
+  return updated.balance;
 }
 
 /**
- * Deduct 1 credit from a user's balance. Returns false if insufficient credits.
+ * Atomically deduct credits from a user's balance.
+ * Returns false if insufficient credits. Uses a DB-level lock to prevent race conditions.
+ *
+ * @param userId - The user to deduct from
+ * @param amount - Number of credits to deduct (default: 1)
  */
-export async function deductCredit(userId: string): Promise<boolean> {
+export async function deductCredit(
+  userId: string,
+  amount: number = 1
+): Promise<boolean> {
   const supabase = createAdminClient();
 
+  // Try atomic RPC first — does SELECT FOR UPDATE + check + deduct in one transaction
+  const { data, error } = await supabase.rpc("deduct_credits", {
+    p_user_id: userId,
+    p_amount: amount,
+  });
+
+  if (!error && data !== null) {
+    // RPC returns -1 if insufficient or no row; >= 0 means success (new balance)
+    return (data as number) >= 0;
+  }
+
+  // Fallback if RPC doesn't exist yet (pre-migration)
+  console.warn(
+    "deduct_credits RPC not available, using fallback:",
+    error?.message
+  );
   const currentBalance = await getCreditBalance(userId);
 
-  if (currentBalance < 1) {
+  if (currentBalance < amount) {
     return false;
   }
 
-  const { error } = await supabase
+  const { error: updateError } = await supabase
     .from("credits")
-    .update({ balance: currentBalance - 1 })
+    .update({ balance: currentBalance - amount })
     .eq("user_id", userId);
 
-  if (error) {
-    console.error("Error deducting credit:", error);
+  if (updateError) {
+    console.error("Error deducting credit:", updateError);
     return false;
   }
 

@@ -3,7 +3,8 @@ import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { scrapeUrl } from "@/lib/scraper";
 import { runLandingPageAudit } from "@/lib/claude";
 import { getUserTier } from "@/lib/tiers";
-import { deductCredit } from "@/lib/credits";
+import { deductCredit, getCreditBalance } from "@/lib/credits";
+import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,6 +15,19 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    }
+
+    // Rate limit
+    const rl = rateLimit(
+      `bulk:${user.id}`,
+      RATE_LIMITS.bulk.maxRequests,
+      RATE_LIMITS.bulk.windowMs
+    );
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: "Too many requests. Please wait a moment before trying again." },
+        { status: 429 }
+      );
     }
 
     const tier = await getUserTier(user.id);
@@ -50,17 +64,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Deduct credits (1 per URL)
-    for (let i = 0; i < validUrls.length; i++) {
-      const success = await deductCredit(user.id);
-      if (!success) {
-        return NextResponse.json(
-          {
-            error: `Insufficient credits. You need ${validUrls.length} credits but only have ${i} remaining.`,
-          },
-          { status: 402 }
-        );
-      }
+    // Deduct all credits atomically (single operation — no partial deductions)
+    const creditsNeeded = validUrls.length;
+    const hasCredits = await deductCredit(user.id, creditsNeeded);
+    if (!hasCredits) {
+      const balance = await getCreditBalance(user.id);
+      return NextResponse.json(
+        {
+          error: `Insufficient credits. You need ${creditsNeeded} credits but only have ${balance} remaining.`,
+        },
+        { status: 402 }
+      );
     }
 
     const supabase = createAdminClient();

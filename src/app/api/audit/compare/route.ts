@@ -4,6 +4,7 @@ import { scrapeUrl } from "@/lib/scraper";
 import { runLandingPageAudit } from "@/lib/claude";
 import { getUserTier } from "@/lib/tiers";
 import { deductCredit } from "@/lib/credits";
+import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,6 +15,19 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    }
+
+    // Rate limit
+    const rl = rateLimit(
+      `compare:${user.id}`,
+      RATE_LIMITS.compare.maxRequests,
+      RATE_LIMITS.compare.windowMs
+    );
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: "Too many requests. Please wait a moment before trying again." },
+        { status: 429 }
+      );
     }
 
     const tier = await getUserTier(user.id);
@@ -51,16 +65,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Deduct 2 credits (one per URL)
-    const d1 = await deductCredit(user.id);
-    if (!d1) {
-      return NextResponse.json(
-        { error: "Insufficient credits. Each comparison uses 2 credits." },
-        { status: 402 }
-      );
-    }
-    const d2 = await deductCredit(user.id);
-    if (!d2) {
+    // Deduct 2 credits atomically (single operation, no partial deductions)
+    const hasCredits = await deductCredit(user.id, 2);
+    if (!hasCredits) {
       return NextResponse.json(
         { error: "Insufficient credits. Each comparison uses 2 credits." },
         { status: 402 }

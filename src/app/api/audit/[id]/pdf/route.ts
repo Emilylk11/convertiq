@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
+import { getUserTier, canExportPdf } from "@/lib/tiers";
+import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import type { AuditRecord } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -9,6 +11,53 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+
+  // 1. Require authentication
+  let userId: string;
+  try {
+    const authClient = await createClient();
+    const {
+      data: { user },
+    } = await authClient.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "Authentication required. Please sign in to export PDFs." },
+        { status: 401 }
+      );
+    }
+    userId = user.id;
+  } catch {
+    return NextResponse.json(
+      { error: "Authentication required" },
+      { status: 401 }
+    );
+  }
+
+  // 2. Rate limit
+  const rl = rateLimit(
+    `pdf:${userId}`,
+    RATE_LIMITS.pdf.maxRequests,
+    RATE_LIMITS.pdf.windowMs
+  );
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Please wait a moment." },
+      { status: 429 }
+    );
+  }
+
+  // 3. Check tier — PDF export requires Starter+
+  const tier = await getUserTier(userId);
+  if (!canExportPdf(tier)) {
+    return NextResponse.json(
+      {
+        error:
+          "PDF export requires a Starter plan or above. Visit /pricing to upgrade.",
+      },
+      { status: 403 }
+    );
+  }
 
   const supabase = createAdminClient();
   const { data: audit, error } = await supabase
@@ -23,6 +72,14 @@ export async function GET(
 
   const record = audit as AuditRecord;
 
+  // 4. Verify ownership — user must own this audit or it must be their free audit
+  if (record.user_id && record.user_id !== userId) {
+    return NextResponse.json(
+      { error: "You do not have permission to export this audit" },
+      { status: 403 }
+    );
+  }
+
   if (record.status !== "completed" || !record.results) {
     return NextResponse.json(
       { error: "Audit is not yet completed" },
@@ -30,7 +87,7 @@ export async function GET(
     );
   }
 
-  // Lazy-import to avoid edge runtime issues
+  // 5. Generate PDF
   const { renderToBuffer } = await import("@react-pdf/renderer");
   const { default: AuditPdf } = await import("@/lib/pdf/AuditPdf");
   const { createElement } = await import("react");
