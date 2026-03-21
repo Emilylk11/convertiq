@@ -69,8 +69,8 @@ export default async function DashboardPage({
             </span>
           </a>
           <div className="hidden sm:flex items-center gap-8 text-sm text-muted">
-            <a href="/#how-it-works" className="hover:text-foreground transition-colors">
-              How It Works
+            <a href="/dashboard" className="text-foreground transition-colors">
+              Dashboard
             </a>
             <a href="/examples" className="hover:text-foreground transition-colors">
               Examples
@@ -80,6 +80,9 @@ export default async function DashboardPage({
             </a>
           </div>
           <div className="flex items-center gap-3">
+            <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-accent/10 border border-accent/20 px-3 py-1 text-xs font-medium text-accent-bright">
+              {balance} credit{balance !== 1 ? "s" : ""}
+            </span>
             <ThemeToggle />
             <a
               href="/#free-audit"
@@ -87,6 +90,10 @@ export default async function DashboardPage({
             >
               New Audit
             </a>
+            <span className="hidden sm:inline text-xs text-muted truncate max-w-[120px]" title={user.email ?? ""}>
+              {user.email}
+            </span>
+            <SignOutButton />
             <MobileNav />
           </div>
         </div>

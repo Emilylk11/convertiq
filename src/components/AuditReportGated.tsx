@@ -1,11 +1,12 @@
 import type { AuditResults, AuditFinding } from "@/lib/types";
+import { type UserTier, canViewFullFindings, canReaudit } from "@/lib/tiers";
 import ScoreGauge from "./ScoreGauge";
 import FindingCard from "./FindingCard";
 import CopyButton from "./CopyButton";
 import ShareButton from "./ShareButton";
 import ReAuditButton from "./ReAuditButton";
 
-const FREE_VISIBLE_COUNT = 3;
+const FREE_VISIBLE_COUNT = 2;
 
 const CATEGORIES: AuditFinding["category"][] = [
   "cta",
@@ -35,13 +36,22 @@ export default function AuditReportGated({
   results,
   url,
   auditId,
+  userTier = "free",
 }: {
   results: AuditResults;
   url: string;
   auditId: string;
+  userTier?: UserTier;
 }) {
-  const visibleFindings = results.findings.slice(0, FREE_VISIBLE_COUNT);
-  const hiddenFindings = results.findings.slice(FREE_VISIBLE_COUNT);
+  const hasFullAccess = canViewFullFindings(userTier);
+  const showReaudit = canReaudit(userTier);
+
+  const visibleFindings = hasFullAccess
+    ? results.findings
+    : results.findings.slice(0, FREE_VISIBLE_COUNT);
+  const hiddenFindings = hasFullAccess
+    ? []
+    : results.findings.slice(FREE_VISIBLE_COUNT);
   const hiddenCount = hiddenFindings.length;
 
   return (
@@ -58,10 +68,24 @@ export default function AuditReportGated({
         </p>
       </div>
 
-      {/* Action bar — share + re-audit available even on free tier */}
+      {/* Action bar */}
       <div className="flex flex-wrap items-center justify-center gap-2 mb-8">
         <ShareButton auditId={auditId} />
-        <ReAuditButton auditId={auditId} />
+        {showReaudit ? (
+          <ReAuditButton auditId={auditId} />
+        ) : (
+          <a
+            href="/pricing"
+            className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium bg-surface border border-border/50 text-muted hover:text-foreground hover:border-border transition-all"
+            title="Upgrade to unlock re-audit"
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+              <rect x="5" y="1" width="6" height="9" rx="3" stroke="currentColor" strokeWidth="1.5" />
+              <rect x="3" y="7" width="10" height="8" rx="2" stroke="currentColor" strokeWidth="1.5" />
+            </svg>
+            Re-audit — Upgrade to unlock
+          </a>
+        )}
       </div>
 
       {/* Category scores */}

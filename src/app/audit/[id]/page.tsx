@@ -1,6 +1,7 @@
-import { createAdminClient } from "@/lib/supabase/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import type { AuditRecord } from "@/lib/types";
+import { getUserTier, canExportPdf, canReaudit, type UserTier } from "@/lib/tiers";
 import AuditReportGated from "@/components/AuditReportGated";
 import AuditReportPolling from "./AuditReportPolling";
 import MobileNav from "@/components/MobileNav";
@@ -25,6 +26,21 @@ export default async function AuditPage({
   }
 
   const record = audit as AuditRecord;
+
+  // Determine user tier for feature gating
+  let userTier: UserTier = "free";
+  try {
+    const authClient = await createClient();
+    const { data: { user } } = await authClient.auth.getUser();
+    if (user) {
+      userTier = await getUserTier(user.id);
+    }
+  } catch {
+    // Not logged in — stays free
+  }
+
+  const showPdf = canExportPdf(userTier);
+  const showReaudit = canReaudit(userTier);
 
   return (
     <div className="min-h-full bg-background text-foreground">
@@ -53,28 +69,42 @@ export default async function AuditPage({
           <div className="flex items-center gap-3">
             <ThemeToggle />
             {record.status === "completed" && (
-              <a
-                href={`/api/audit/${record.id}/pdf`}
-                className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-surface px-4 py-1.5 text-sm text-muted hover:text-foreground hover:border-border transition-all"
-                download
-              >
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                  <path
-                    d="M8 2v8M5 7l3 3 3-3"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M2 12h12"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  />
-                </svg>
-                PDF
-              </a>
+              showPdf ? (
+                <a
+                  href={`/api/audit/${record.id}/pdf`}
+                  className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-surface px-4 py-1.5 text-sm text-muted hover:text-foreground hover:border-border transition-all"
+                  download
+                >
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                    <path
+                      d="M8 2v8M5 7l3 3 3-3"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M2 12h12"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  PDF
+                </a>
+              ) : (
+                <a
+                  href="/pricing"
+                  className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-surface px-4 py-1.5 text-sm text-muted hover:text-foreground hover:border-border transition-all"
+                  title="Upgrade to unlock PDF export"
+                >
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                    <rect x="5" y="1" width="6" height="9" rx="3" stroke="currentColor" strokeWidth="1.5" />
+                    <rect x="3" y="7" width="10" height="8" rx="2" stroke="currentColor" strokeWidth="1.5" />
+                  </svg>
+                  PDF
+                </a>
+              )
             )}
             <a
               href="/pricing"
@@ -93,6 +123,7 @@ export default async function AuditPage({
             results={record.results}
             url={record.url}
             auditId={record.id}
+            userTier={userTier}
           />
         ) : record.status === "failed" ? (
           <div className="text-center py-16 sm:py-20">

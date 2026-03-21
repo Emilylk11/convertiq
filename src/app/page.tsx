@@ -1,8 +1,17 @@
 import AuditForm from "@/components/AuditForm";
 import MobileNav from "@/components/MobileNav";
 import ThemeToggle from "@/components/ThemeToggle";
+import { createClient } from "@/lib/supabase/server";
 
-export default function Home() {
+export default async function Home() {
+  let isLoggedIn = false;
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    isLoggedIn = !!user;
+  } catch {
+    // Not logged in
+  }
   return (
     <div className="flex flex-col min-h-full bg-background text-foreground">
       {/* Nav */}
@@ -29,12 +38,21 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <a
-              href="/login"
-              className="rounded-full bg-accent px-4 sm:px-5 py-2 text-sm font-medium text-white hover:bg-accent-bright transition-colors"
-            >
-              Sign In
-            </a>
+            {isLoggedIn ? (
+              <a
+                href="/dashboard"
+                className="rounded-full bg-accent px-4 sm:px-5 py-2 text-sm font-medium text-white hover:bg-accent-bright transition-colors"
+              >
+                Dashboard
+              </a>
+            ) : (
+              <a
+                href="/login"
+                className="rounded-full bg-accent px-4 sm:px-5 py-2 text-sm font-medium text-white hover:bg-accent-bright transition-colors"
+              >
+                Sign In
+              </a>
+            )}
             <MobileNav />
           </div>
         </div>
