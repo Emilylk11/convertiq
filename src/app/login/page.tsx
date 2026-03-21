@@ -42,17 +42,10 @@ export default function LoginPage() {
             <LoginForm />
           </Suspense>
 
-          <div className="mt-8 space-y-3">
+          <div className="mt-8">
             <p className="text-center text-xs text-muted/60">
               New here? Your account is created automatically on first sign-in.
-            </p>
-            <div className="flex items-center gap-3 text-xs text-muted/40">
-              <span className="flex-1 h-px bg-border/50" />
-              <span>No password needed</span>
-              <span className="flex-1 h-px bg-border/50" />
-            </div>
-            <p className="text-center text-xs text-muted/40">
-              We&apos;ll send a secure link to your email — click it to sign in instantly.
+              No password needed.
             </p>
           </div>
         </div>
