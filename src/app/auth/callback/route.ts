@@ -1,66 +1,71 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = request.nextUrl;
+  const { searchParams, origin } = request.nextUrl;
   const code = searchParams.get("code");
   const token_hash = searchParams.get("token_hash");
   const type = searchParams.get("type");
   const next = searchParams.get("next") ?? "/dashboard";
 
-  // Use the configured app URL to avoid origin mismatches on Vercel
-  const baseUrl =
-    process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
+  const errorUrl = new URL("/login?error=auth", origin);
 
-  const redirectTo = `${baseUrl}${next}`;
-  const errorRedirect = `${baseUrl}/login?error=auth`;
+  // Must have either code or token_hash
+  if (!code && !token_hash) {
+    return NextResponse.redirect(errorUrl);
+  }
 
-  // Create the success redirect response first so cookies can be set on it
-  const response = NextResponse.redirect(redirectTo);
+  try {
+    // Dynamic import to avoid any module-level crashes
+    const { createServerClient } = await import("@supabase/ssr");
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+      console.error("Missing Supabase env vars in auth callback");
+      return NextResponse.redirect(errorUrl);
+    }
+
+    const successUrl = new URL(next, origin);
+    const response = NextResponse.redirect(successUrl);
+
+    const supabase = createServerClient(supabaseUrl, supabaseKey, {
       cookies: {
         getAll() {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {
-            // Set cookies on the redirect response
-            response.cookies.set(name, value, {
-              ...options,
-              // Ensure cookies work across the domain
-              sameSite: "lax",
-              secure: true,
-            });
+            response.cookies.set(name, value, options);
           });
         },
       },
-    }
-  );
-
-  // Handle PKCE code exchange
-  if (code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
-      return response;
-    }
-    console.error("Code exchange error:", error.message, error);
-  }
-
-  // Handle magic link token_hash verification
-  if (token_hash && type) {
-    const { error } = await supabase.auth.verifyOtp({
-      token_hash,
-      type: type as "email" | "signup" | "magiclink",
     });
-    if (!error) {
+
+    if (code) {
+      const { error } = await supabase.auth.exchangeCodeForSession(code);
+      if (error) {
+        console.error("Code exchange failed:", error.message);
+        return NextResponse.redirect(errorUrl);
+      }
       return response;
     }
-    console.error("OTP verification error:", error.message, error);
-  }
 
-  return NextResponse.redirect(errorRedirect);
+    if (token_hash && type) {
+      const { error } = await supabase.auth.verifyOtp({
+        token_hash,
+        type: type as "email" | "signup" | "magiclink",
+      });
+      if (error) {
+        console.error("OTP verify failed:", error.message);
+        return NextResponse.redirect(errorUrl);
+      }
+      return response;
+    }
+
+    return NextResponse.redirect(errorUrl);
+  } catch (e) {
+    console.error("Auth callback crashed:", e instanceof Error ? e.message : e);
+    return NextResponse.redirect(errorUrl);
+  }
 }

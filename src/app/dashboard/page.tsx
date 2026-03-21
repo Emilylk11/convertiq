@@ -35,21 +35,25 @@ export default async function DashboardPage({
     redirect("/login");
   }
 
-  // Fetch credit balance and audit history in parallel
-  const [balance, auditsResult] = await Promise.all([
-    getCreditBalance(user.id),
-    createAdminClient()
-      .from("audits")
-      .select("id, url, audit_type, status, overall_score, created_at")
-      .or(`user_id.eq.${user.id},email.eq.${user.email}`)
-      .order("created_at", { ascending: false })
-      .limit(20),
-  ]);
+  // Fetch credit balance and audit history in parallel (wrapped in try/catch for resilience)
+  let balance = 0;
+  let audits: Pick<AuditRecord, "id" | "url" | "audit_type" | "status" | "overall_score" | "created_at">[] = [];
 
-  const audits = (auditsResult.data || []) as Pick<
-    AuditRecord,
-    "id" | "url" | "audit_type" | "status" | "overall_score" | "created_at"
-  >[];
+  try {
+    const [bal, auditsResult] = await Promise.all([
+      getCreditBalance(user.id).catch(() => 0),
+      createAdminClient()
+        .from("audits")
+        .select("id, url, audit_type, status, overall_score, created_at")
+        .or(`user_id.eq.${user.id},email.eq.${user.email}`)
+        .order("created_at", { ascending: false })
+        .limit(20),
+    ]);
+    balance = bal;
+    audits = (auditsResult.data || []) as typeof audits;
+  } catch (e) {
+    console.error("Dashboard data fetch error:", e);
+  }
 
   return (
     <div className="min-h-full bg-background text-foreground">
