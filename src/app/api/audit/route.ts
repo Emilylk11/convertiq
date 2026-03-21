@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { scrapeUrl } from "@/lib/scraper";
 import { runLandingPageAudit } from "@/lib/claude";
 import { sendAuditEmail } from "@/lib/resend";
+import { getUserTier, hasPriorityProcessing } from "@/lib/tiers";
+import { deductCredit } from "@/lib/credits";
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,6 +18,34 @@ export async function POST(request: NextRequest) {
         audience?: string;
       };
     };
+
+    // Check if user is logged in for tier features & credit deduction
+    let userId: string | null = null;
+    let isPriority = false;
+    let auditType: "free" | "full" = "free";
+
+    try {
+      const authClient = await createClient();
+      const { data: { user } } = await authClient.auth.getUser();
+      if (user) {
+        userId = user.id;
+        const tier = await getUserTier(user.id);
+        isPriority = hasPriorityProcessing(tier);
+        if (tier !== "free") {
+          auditType = "full";
+          // Deduct credit for logged-in paid users
+          const hasCredit = await deductCredit(user.id);
+          if (!hasCredit) {
+            return NextResponse.json(
+              { error: "Insufficient credits. Please purchase more credits." },
+              { status: 402 }
+            );
+          }
+        }
+      }
+    } catch {
+      // Not logged in — free audit
+    }
 
     // Validate input
     if (!url || !email) {
@@ -52,15 +82,20 @@ export async function POST(request: NextRequest) {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 90);
 
+    const insertPayload: Record<string, unknown> = {
+      url: parsedUrl.toString(),
+      email,
+      audit_type: auditType,
+      status: "pending",
+      expires_at: expiresAt.toISOString(),
+    };
+    if (userId) {
+      insertPayload.user_id = userId;
+    }
+
     const { data: audit, error: insertError } = await supabase
       .from("audits")
-      .insert({
-        url: parsedUrl.toString(),
-        email,
-        audit_type: "free",
-        status: "pending",
-        expires_at: expiresAt.toISOString(),
-      })
+      .insert(insertPayload)
       .select("id")
       .single();
 

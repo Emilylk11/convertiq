@@ -1,9 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { getCreditBalance } from "@/lib/credits";
 import { createAdminClient } from "@/lib/supabase/server";
+import { getUserTier, type UserTier } from "@/lib/tiers";
 import { redirect } from "next/navigation";
 import type { AuditRecord } from "@/lib/types";
-import MobileNav from "@/components/MobileNav";
+import DashboardMobileNav from "@/components/DashboardMobileNav";
 import ThemeToggle from "@/components/ThemeToggle";
 import SignOutButton from "@/components/SignOutButton";
 import type { Metadata } from "next";
@@ -17,6 +18,21 @@ function scoreColor(score: number) {
   if (score >= 70) return "text-green-400";
   if (score >= 40) return "text-yellow-400";
   return "text-red-400";
+}
+
+function tierBadge(tier: UserTier) {
+  const styles: Record<UserTier, { bg: string; text: string; label: string }> = {
+    free: { bg: "bg-zinc-500/10 border-zinc-500/20", text: "text-zinc-400", label: "Free" },
+    starter: { bg: "bg-blue-500/10 border-blue-500/20", text: "text-blue-400", label: "Starter" },
+    growth: { bg: "bg-purple-500/10 border-purple-500/20", text: "text-purple-400", label: "Growth" },
+    agency: { bg: "bg-amber-500/10 border-amber-500/20", text: "text-amber-400", label: "Agency" },
+  };
+  const s = styles[tier];
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${s.bg} ${s.text}`}>
+      {s.label}
+    </span>
+  );
 }
 
 export default async function DashboardPage({
@@ -35,13 +51,15 @@ export default async function DashboardPage({
     redirect("/login");
   }
 
-  // Fetch credit balance and audit history in parallel (wrapped in try/catch for resilience)
+  // Fetch credit balance, tier, and audit history in parallel
   let balance = 0;
+  let tier: UserTier = "free";
   let audits: Pick<AuditRecord, "id" | "url" | "audit_type" | "status" | "overall_score" | "created_at">[] = [];
 
   try {
-    const [bal, auditsResult] = await Promise.all([
+    const [bal, userTier, auditsResult] = await Promise.all([
       getCreditBalance(user.id).catch(() => 0),
+      getUserTier(user.id).catch(() => "free" as UserTier),
       createAdminClient()
         .from("audits")
         .select("id, url, audit_type, status, overall_score, created_at")
@@ -50,17 +68,29 @@ export default async function DashboardPage({
         .limit(20),
     ]);
     balance = bal;
+    tier = userTier;
     audits = (auditsResult.data || []) as typeof audits;
   } catch (e) {
     console.error("Dashboard data fetch error:", e);
   }
+
+  const completedAudits = audits.filter((a) => a.status === "completed");
+  const avgScore =
+    completedAudits.filter((a) => a.overall_score).length > 0
+      ? Math.round(
+          completedAudits
+            .filter((a) => a.overall_score)
+            .reduce((sum, a) => sum + (a.overall_score || 0), 0) /
+            completedAudits.filter((a) => a.overall_score).length
+        )
+      : null;
 
   return (
     <div className="min-h-full bg-background text-foreground">
       {/* Nav */}
       <nav className="border-b border-border/50 bg-background/80 backdrop-blur-xl sticky top-0 z-10">
         <div className="mx-auto max-w-5xl flex items-center justify-between px-4 sm:px-6 h-16">
-          <a href="/" className="flex items-center gap-2">
+          <a href="/dashboard" className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-accent to-accent-dim flex items-center justify-center font-mono text-sm font-bold text-white shrink-0">
               C
             </div>
@@ -68,33 +98,37 @@ export default async function DashboardPage({
               Convert<span className="text-accent-bright">IQ</span>
             </span>
           </a>
-          <div className="hidden sm:flex items-center gap-8 text-sm text-muted">
-            <a href="/dashboard" className="text-foreground transition-colors">
+          <div className="hidden sm:flex items-center gap-6 text-sm text-muted">
+            <a href="/dashboard" className="text-foreground font-medium transition-colors">
               Dashboard
             </a>
-            <a href="/examples" className="hover:text-foreground transition-colors">
-              Examples
+            <a href="/dashboard/new-audit" className="hover:text-foreground transition-colors">
+              Run Audit
             </a>
             <a href="/pricing" className="hover:text-foreground transition-colors">
-              Pricing
+              Buy Credits
             </a>
+            {(tier === "growth" || tier === "agency") && (
+              <a href="/dashboard/competitors" className="hover:text-foreground transition-colors">
+                Competitors
+              </a>
+            )}
+            {tier === "agency" && (
+              <a href="/dashboard/bulk-audit" className="hover:text-foreground transition-colors">
+                Bulk Audit
+              </a>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-accent/10 border border-accent/20 px-3 py-1 text-xs font-medium text-accent-bright">
               {balance} credit{balance !== 1 ? "s" : ""}
             </span>
             <ThemeToggle />
-            <a
-              href="/#free-audit"
-              className="rounded-full bg-accent px-4 sm:px-5 py-2 text-sm font-medium text-white hover:bg-accent-bright transition-colors"
-            >
-              New Audit
-            </a>
             <span className="hidden sm:inline text-xs text-muted truncate max-w-[120px]" title={user.email ?? ""}>
               {user.email}
             </span>
             <SignOutButton />
-            <MobileNav />
+            <DashboardMobileNav tier={tier} />
           </div>
         </div>
       </nav>
@@ -103,7 +137,7 @@ export default async function DashboardPage({
         {/* Purchase success banner */}
         {justPurchased && (
           <div className="rounded-2xl border border-green-500/30 bg-green-500/10 p-4 mb-6 flex items-center gap-3">
-            <span className="text-xl">🎉</span>
+            <span className="text-xl">&#127881;</span>
             <div>
               <p className="text-sm font-semibold text-green-400">
                 Payment successful!
@@ -118,12 +152,20 @@ export default async function DashboardPage({
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-4 mb-10">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-1">
-              Dashboard
-            </h1>
+            <div className="flex items-center gap-3 mb-1">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                Dashboard
+              </h1>
+              {tierBadge(tier)}
+            </div>
             <p className="text-sm text-muted">{user.email}</p>
           </div>
-          <SignOutButton />
+          <a
+            href="/dashboard/new-audit"
+            className="rounded-full bg-accent px-5 py-2 text-sm font-medium text-white hover:bg-accent-bright transition-colors"
+          >
+            Run Audit
+          </a>
         </div>
 
         {/* Stats cards */}
@@ -137,7 +179,7 @@ export default async function DashboardPage({
               href="/pricing"
               className="inline-block mt-3 text-xs text-accent-bright hover:underline"
             >
-              Buy more credits →
+              Buy more credits &rarr;
             </a>
           </div>
           <div className="rounded-2xl border border-border/50 bg-surface/50 p-6">
@@ -151,32 +193,179 @@ export default async function DashboardPage({
               Average score
             </p>
             <p className="text-3xl font-bold">
-              {audits.filter((a) => a.overall_score).length > 0
-                ? Math.round(
-                    audits
-                      .filter((a) => a.overall_score)
-                      .reduce((sum, a) => sum + (a.overall_score || 0), 0) /
-                      audits.filter((a) => a.overall_score).length
-                  )
-                : "—"}
+              {avgScore !== null ? avgScore : "—"}
             </p>
           </div>
         </div>
+
+        {/* Tier-specific feature panels */}
+        {tier === "free" && (
+          <div className="rounded-2xl border border-accent/20 bg-accent/5 p-6 mb-10">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h3 className="text-sm font-semibold text-accent-bright mb-1">Upgrade your plan</h3>
+                <p className="text-xs text-muted max-w-md">
+                  You&apos;re on the Free plan. Upgrade to Starter for full findings, PDF reports, and re-audits.
+                </p>
+              </div>
+              <a
+                href="/pricing"
+                className="rounded-full bg-accent px-5 py-2 text-sm font-medium text-white hover:bg-accent-bright transition-colors shrink-0"
+              >
+                View Plans
+              </a>
+            </div>
+          </div>
+        )}
+
+        {tier === "starter" && (
+          <div className="grid sm:grid-cols-3 gap-4 mb-10">
+            <div className="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-blue-400">
+                  <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <p className="text-xs font-semibold text-blue-400">PDF Export</p>
+              </div>
+              <p className="text-xs text-muted">Download professional PDF reports for any audit.</p>
+            </div>
+            <div className="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-blue-400">
+                  <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                <p className="text-xs font-semibold text-blue-400">Full Findings</p>
+              </div>
+              <p className="text-xs text-muted">See every finding with detailed recommendations.</p>
+            </div>
+            <div className="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-blue-400">
+                  <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <p className="text-xs font-semibold text-blue-400">Re-Audit</p>
+              </div>
+              <p className="text-xs text-muted">Track changes over time by re-running audits.</p>
+            </div>
+          </div>
+        )}
+
+        {tier === "growth" && (
+          <div className="grid sm:grid-cols-3 gap-4 mb-10">
+            <div className="rounded-2xl border border-purple-500/20 bg-purple-500/5 p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-purple-400">
+                  <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                <p className="text-xs font-semibold text-purple-400">AI Rewrites</p>
+              </div>
+              <p className="text-xs text-muted">Get AI-powered copy rewrites to boost conversions.</p>
+            </div>
+            <div className="rounded-2xl border border-purple-500/20 bg-purple-500/5 p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-purple-400">
+                  <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <p className="text-xs font-semibold text-purple-400">Competitor Analysis</p>
+              </div>
+              <p className="text-xs text-muted">Compare your pages against competitors side by side.</p>
+            </div>
+            <div className="rounded-2xl border border-purple-500/20 bg-purple-500/5 p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-purple-400">
+                  <path d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <p className="text-xs font-semibold text-purple-400">Priority Processing</p>
+              </div>
+              <p className="text-xs text-muted">Your audits are processed first in our queue.</p>
+            </div>
+          </div>
+        )}
+
+        {tier === "agency" && (
+          <div className="grid sm:grid-cols-3 gap-4 mb-10">
+            <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-amber-400">
+                  <path d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                </svg>
+                <p className="text-xs font-semibold text-amber-400">Custom Branding</p>
+              </div>
+              <p className="text-xs text-muted">White-label PDF reports with your agency branding.</p>
+            </div>
+            <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-amber-400">
+                  <path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+                <p className="text-xs font-semibold text-amber-400">Bulk Audit</p>
+              </div>
+              <p className="text-xs text-muted">Audit multiple URLs at once for large client sites.</p>
+            </div>
+            <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-amber-400">
+                  <path d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                <p className="text-xs font-semibold text-amber-400">Priority Support</p>
+              </div>
+              <p className="text-xs text-muted">Direct access to our team for help and strategy.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Quick actions — tier-aware */}
+        {tier !== "free" && (
+          <div className="flex flex-wrap gap-3 mb-10">
+            <a
+              href="/dashboard/new-audit"
+              className="inline-flex items-center gap-2 rounded-xl border border-border/50 bg-surface/30 px-4 py-2.5 text-sm font-medium hover:bg-surface/60 hover:border-border transition-all"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              Run New Audit
+            </a>
+            {(tier === "growth" || tier === "agency") && (
+              <a
+                href="/dashboard/competitors"
+                className="inline-flex items-center gap-2 rounded-xl border border-border/50 bg-surface/30 px-4 py-2.5 text-sm font-medium hover:bg-surface/60 hover:border-border transition-all"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                Compare Competitors
+              </a>
+            )}
+            {tier === "agency" && (
+              <a
+                href="/dashboard/bulk-audit"
+                className="inline-flex items-center gap-2 rounded-xl border border-border/50 bg-surface/30 px-4 py-2.5 text-sm font-medium hover:bg-surface/60 hover:border-border transition-all"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+                Bulk Audit
+              </a>
+            )}
+          </div>
+        )}
 
         {/* Audit history */}
         <h2 className="text-lg font-semibold mb-4">Audit history</h2>
         {audits.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border/50 p-10 text-center">
-            <div className="text-3xl mb-3">🔍</div>
+            <div className="text-3xl mb-3">&#128269;</div>
             <h3 className="text-lg font-semibold mb-2">No audits yet</h3>
             <p className="text-sm text-muted mb-5 max-w-sm mx-auto">
               Run your first audit to see it appear here.
             </p>
             <a
-              href="/#free-audit"
+              href="/dashboard/new-audit"
               className="inline-block rounded-xl bg-gradient-to-r from-accent to-accent-dim px-8 py-3 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
             >
-              Run an Audit →
+              Run an Audit &rarr;
             </a>
           </div>
         ) : (
@@ -197,9 +386,9 @@ export default async function DashboardPage({
                       day: "numeric",
                       year: "numeric",
                     })}
-                    <span className="mx-1.5">·</span>
+                    <span className="mx-1.5">&middot;</span>
                     <span className="capitalize">{audit.audit_type} audit</span>
-                    <span className="mx-1.5">·</span>
+                    <span className="mx-1.5">&middot;</span>
                     <span className="capitalize">{audit.status}</span>
                   </p>
                 </div>
