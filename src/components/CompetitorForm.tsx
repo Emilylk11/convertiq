@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import OutOfCreditsModal from "./OutOfCreditsModal";
 
 const PROGRESS_STEPS = [
   { text: "Scraping both pages...", delay: 0 },
@@ -82,6 +83,7 @@ export default function CompetitorForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState("");
+  const [showCreditsModal, setShowCreditsModal] = useState(false);
   const [result, setResult] = useState<ComparisonResult | null>(null);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -121,6 +123,12 @@ export default function CompetitorForm() {
 
       if (!response.ok) {
         stopProgressSteps();
+        if (response.status === 402) {
+          setShowCreditsModal(true);
+          setLoading(false);
+          setStep("");
+          return;
+        }
         setError(data.error || "Something went wrong");
         setLoading(false);
         setStep("");
@@ -365,6 +373,11 @@ export default function CompetitorForm() {
       <p className="text-center text-xs text-muted/60 mt-2">
         Each comparison uses 2 credits — one per URL analyzed.
       </p>
+
+      <OutOfCreditsModal
+        open={showCreditsModal}
+        onClose={() => setShowCreditsModal(false)}
+      />
     </form>
   );
 }

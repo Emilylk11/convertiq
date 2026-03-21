@@ -9,6 +9,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import SignOutButton from "@/components/SignOutButton";
 import SupportButton from "@/components/SupportButton";
 import OnboardingBanner from "@/components/OnboardingBanner";
+import LowCreditWarning from "@/components/LowCreditWarning";
 import AuditHistoryClient from "@/components/AuditHistoryClient";
 import type { Metadata } from "next";
 
@@ -173,6 +174,9 @@ export default async function DashboardPage({
             </div>
           </div>
         )}
+
+        {/* Low credit warning */}
+        <LowCreditWarning balance={balance} />
 
         {/* Onboarding for new users */}
         <OnboardingBanner

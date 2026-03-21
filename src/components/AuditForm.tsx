@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import OutOfCreditsModal from "./OutOfCreditsModal";
 
 const PROGRESS_STEPS = [
   { text: "Scraping your page...", delay: 0 },
@@ -51,6 +52,7 @@ export default function AuditForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState("");
+  const [showCreditsModal, setShowCreditsModal] = useState(false);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => {
@@ -98,6 +100,12 @@ export default function AuditForm() {
 
       if (!response.ok) {
         stopProgressSteps();
+        if (response.status === 402) {
+          setShowCreditsModal(true);
+          setLoading(false);
+          setStep("");
+          return;
+        }
         setError(data.error || "Something went wrong");
         setLoading(false);
         setStep("");
@@ -306,6 +314,11 @@ export default function AuditForm() {
       <p className="text-center text-xs text-muted/60 mt-3">
         No spam. No credit card. Just actionable insights.
       </p>
+
+      <OutOfCreditsModal
+        open={showCreditsModal}
+        onClose={() => setShowCreditsModal(false)}
+      />
     </form>
   );
 }

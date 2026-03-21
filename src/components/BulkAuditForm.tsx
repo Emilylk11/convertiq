@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import OutOfCreditsModal from "./OutOfCreditsModal";
 
 interface BulkResult {
   batchId: string;
@@ -27,6 +28,7 @@ export default function BulkAuditForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState("");
+  const [showCreditsModal, setShowCreditsModal] = useState(false);
   const [result, setResult] = useState<BulkResult | null>(null);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -97,6 +99,12 @@ export default function BulkAuditForm() {
       timersRef.current = [];
 
       if (!response.ok) {
+        if (response.status === 402) {
+          setShowCreditsModal(true);
+          setLoading(false);
+          setStep("");
+          return;
+        }
         setError(data.error || "Something went wrong");
         setLoading(false);
         setStep("");
@@ -245,6 +253,11 @@ export default function BulkAuditForm() {
       <p className="text-center text-xs text-muted/60 mt-2">
         Each URL uses 1 credit. All audits run sequentially to ensure quality.
       </p>
+
+      <OutOfCreditsModal
+        open={showCreditsModal}
+        onClose={() => setShowCreditsModal(false)}
+      />
     </form>
   );
 }
