@@ -34,8 +34,7 @@ export default function FunnelAuditForm({ isLoggedIn }: { isLoggedIn: boolean })
 
   const addStage = () => {
     if (stages.length >= 5) return;
-    // Default new stages to "text" if already at 3 URL stages
-    const defaultType = urlStageCount >= 3 ? "text" : "url";
+    const defaultType = "url";
     setStages([...stages, { stageName: `Stage ${stages.length + 1}`, type: defaultType, content: "" }]);
   };
 
@@ -93,7 +92,7 @@ export default function FunnelAuditForm({ isLoggedIn }: { isLoggedIn: boolean })
         <span className="text-amber-400 text-sm">⚡</span>
         <p className="text-xs text-amber-400/80">
           Full funnel audits cost <span className="font-semibold text-amber-400">2 credits</span> because they analyze multiple pages.
-          Max 3 URL stages — use &quot;Paste Text&quot; for others.
+          Audits with 4-5 URL stages may take 2-3 minutes.
         </p>
       </div>
 
@@ -117,17 +116,13 @@ export default function FunnelAuditForm({ isLoggedIn }: { isLoggedIn: boolean })
                 value={stage.type}
                 onChange={(e) => {
                   const newType = e.target.value as "url" | "text";
-                  if (newType === "url" && stage.type !== "url" && urlStageCount >= 3) {
-                    setError("Maximum 3 URL stages. Use \"Paste Text\" for additional stages.");
-                    return;
-                  }
                   setError("");
                   updateStage(i, "type", newType);
                 }}
                 disabled={loading}
                 className="rounded-lg border border-border/50 bg-background px-2 py-1 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <option value="url" disabled={stage.type !== "url" && urlStageCount >= 3}>URL</option>
+                <option value="url">URL</option>
                 <option value="text">Paste Text</option>
               </select>
               {stages.length > 2 && (
@@ -247,7 +242,7 @@ export default function FunnelAuditForm({ isLoggedIn }: { isLoggedIn: boolean })
         {loading ? (
           <span className="flex items-center justify-center gap-2">
             <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-            Analyzing funnel...
+            Analyzing funnel — this may take 1-3 minutes...
           </span>
         ) : isLoggedIn ? (
           "Run Funnel Audit (2 Credits) →"

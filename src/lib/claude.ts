@@ -17,7 +17,7 @@ export interface AuditContext {
   avgOrderValue?: number;
 }
 
-const CLAUDE_TIMEOUT_MS = 60_000; // 60 second timeout for Claude API calls
+const CLAUDE_TIMEOUT_MS = 120_000; // 120 second timeout for Claude API calls
 
 export async function runLandingPageAudit(
   scrapedData: ScrapedPageData,

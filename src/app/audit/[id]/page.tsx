@@ -32,6 +32,24 @@ export default async function AuditPage({
 
   const record = audit as AuditRecord;
 
+  // Detect stuck audits — if "processing" for more than 5 minutes, mark as failed
+  if (record.status === "processing") {
+    const createdAt = new Date(record.created_at).getTime();
+    const now = Date.now();
+    const STUCK_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
+    if (now - createdAt > STUCK_THRESHOLD_MS) {
+      await supabase
+        .from("audits")
+        .update({
+          status: "failed",
+          error_message: "Audit timed out. The pages may be too large or slow to respond. Please try again with fewer stages.",
+        })
+        .eq("id", id);
+      record.status = "failed";
+      record.error_message = "Audit timed out. The pages may be too large or slow to respond. Please try again with fewer stages.";
+    }
+  }
+
   // Check if audit has expired
   if (record.expires_at && new Date(record.expires_at) < new Date()) {
     return (
