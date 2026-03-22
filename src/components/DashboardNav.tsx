@@ -35,11 +35,6 @@ export default function DashboardNav({ tier, balance, email, activePage }: Dashb
             <a href="/pricing" className={linkClass("buy-credits")}>
               Buy Credits
             </a>
-            {(tier === "growth" || tier === "agency") && (
-              <a href="/dashboard/competitors" className={linkClass("competitors")}>
-                Competitors
-              </a>
-            )}
             {tier === "agency" && (
               <a href="/dashboard/bulk-audit" className={linkClass("bulk-audit")}>
                 Bulk Audit
