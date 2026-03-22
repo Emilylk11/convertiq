@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { scrapeUrl } from "@/lib/scraper";
 import { runLandingPageAudit } from "@/lib/claude";
-import { sendAuditEmail } from "@/lib/resend";
+import { sendAuditEmail, sendLowCreditEmail } from "@/lib/resend";
 import { getUserTier, hasPriorityProcessing } from "@/lib/tiers";
-import { deductCredit } from "@/lib/credits";
+import { deductCredit, getCreditBalance } from "@/lib/credits";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
@@ -193,6 +193,18 @@ export async function POST(request: NextRequest) {
       });
     } catch (emailError) {
       console.error("Email send failed:", emailError);
+    }
+
+    // Send low credit warning email if balance is 1-2 after deduction
+    if (userId) {
+      try {
+        const remainingBalance = await getCreditBalance(userId);
+        if (remainingBalance > 0 && remainingBalance <= 2) {
+          await sendLowCreditEmail({ to: email, balance: remainingBalance });
+        }
+      } catch (lowCreditError) {
+        console.error("Low credit email failed:", lowCreditError);
+      }
     }
 
     return NextResponse.json({ auditId: audit.id }, { status: 201 });

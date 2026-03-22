@@ -1,6 +1,8 @@
 import AuditForm from "@/components/AuditForm";
 import MobileNav from "@/components/MobileNav";
 import ThemeToggle from "@/components/ThemeToggle";
+import ReferralCapture from "@/components/ReferralCapture";
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function Home() {
@@ -14,6 +16,8 @@ export default async function Home() {
   }
   return (
     <div className="flex flex-col min-h-full bg-background text-foreground">
+      {/* Capture referral code from URL */}
+      <Suspense><ReferralCapture /></Suspense>
       {/* Nav */}
       <nav className="fixed top-0 inset-x-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto max-w-6xl flex items-center justify-between px-4 sm:px-6 h-16">

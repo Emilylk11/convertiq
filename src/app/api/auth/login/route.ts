@@ -3,9 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, redirect } = (await request.json()) as {
+    const { email, redirect, ref } = (await request.json()) as {
       email?: string;
       redirect?: string;
+      ref?: string;
     };
 
     if (!email) {
@@ -20,7 +21,7 @@ export async function POST(request: NextRequest) {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=${encodeURIComponent(next)}`,
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=${encodeURIComponent(next)}${ref ? `&ref=${encodeURIComponent(ref)}` : ""}`,
       },
     });
 

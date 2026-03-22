@@ -17,7 +17,17 @@ export default function LoginForm() {
   const [errorMsg, setErrorMsg] = useState("");
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/dashboard";
+  const paramRef = searchParams.get("ref") || "";
+  const [ref, setRef] = useState(paramRef);
   const authError = searchParams.get("error");
+
+  // Also check sessionStorage for referral code (set by ReferralCapture on homepage)
+  useState(() => {
+    if (!paramRef && typeof window !== "undefined") {
+      const stored = sessionStorage.getItem("convertiq_ref");
+      if (stored) setRef(stored);
+    }
+  });
 
   async function handleGoogleSignIn() {
     setStatus("google-loading");
@@ -28,7 +38,7 @@ export default function LoginForm() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirect)}`,
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirect)}${ref ? `&ref=${encodeURIComponent(ref)}` : ""}`,
         },
       });
 
@@ -52,7 +62,7 @@ export default function LoginForm() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, redirect }),
+        body: JSON.stringify({ email, redirect, ref }),
       });
 
       const data = await res.json();

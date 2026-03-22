@@ -6,6 +6,7 @@ export async function GET(request: NextRequest) {
   const token_hash = searchParams.get("token_hash");
   const type = searchParams.get("type");
   const next = searchParams.get("next") ?? "/dashboard";
+  const ref = searchParams.get("ref"); // referral code
 
   const errorUrl = new URL("/login?error=auth", origin);
 
@@ -48,6 +49,24 @@ export async function GET(request: NextRequest) {
         console.error("Code exchange failed:", error.message);
         return NextResponse.redirect(errorUrl);
       }
+
+      // Process referral if present
+      if (ref) {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { trackReferralSignup } = await import("@/lib/referrals");
+            const { sendWelcomeEmail } = await import("@/lib/resend");
+            const result = await trackReferralSignup(ref, user.id, user.email || "");
+            if (result.success && user.email) {
+              await sendWelcomeEmail({ to: user.email, referralCredit: true });
+            }
+          }
+        } catch (refError) {
+          console.error("Referral tracking error (non-blocking):", refError);
+        }
+      }
+
       return response;
     }
 
@@ -60,6 +79,24 @@ export async function GET(request: NextRequest) {
         console.error("OTP verify failed:", error.message);
         return NextResponse.redirect(errorUrl);
       }
+
+      // Process referral if present
+      if (ref) {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { trackReferralSignup } = await import("@/lib/referrals");
+            const { sendWelcomeEmail } = await import("@/lib/resend");
+            const result = await trackReferralSignup(ref, user.id, user.email || "");
+            if (result.success && user.email) {
+              await sendWelcomeEmail({ to: user.email, referralCredit: true });
+            }
+          }
+        } catch (refError) {
+          console.error("Referral tracking error (non-blocking):", refError);
+        }
+      }
+
       return response;
     }
 

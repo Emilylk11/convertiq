@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyWebhookSignature, VARIANT_CREDIT_MAP } from "@/lib/lemonsqueezy";
 import { addCredits } from "@/lib/credits";
 import { createAdminClient } from "@/lib/supabase/server";
+import { rewardReferrerOnConversion } from "@/lib/referrals";
+import { sendLowCreditEmail, sendWelcomePurchaseEmail } from "@/lib/resend";
 
 export async function POST(request: NextRequest) {
   try {
@@ -70,6 +72,36 @@ export async function POST(request: NextRequest) {
     console.log(
       `Added ${creditsToAdd} credits for user ${userId}. New balance: ${newBalance}`
     );
+
+    // Reward referrer if this is the user's first purchase
+    try {
+      await rewardReferrerOnConversion(userId);
+    } catch (refError) {
+      console.error("Referral reward error (non-blocking):", refError);
+    }
+
+    // Send welcome/purchase confirmation email (non-blocking)
+    try {
+      const { data: userData } = await supabase
+        .from("credits")
+        .select("user_id")
+        .eq("user_id", userId)
+        .single();
+
+      if (userData) {
+        // Get user email from auth
+        const { data: { user: authUser } } = await supabase.auth.admin.getUserById(userId);
+        if (authUser?.email) {
+          await sendWelcomePurchaseEmail({
+            to: authUser.email,
+            creditsAdded: creditsToAdd,
+            newBalance: newBalance,
+          });
+        }
+      }
+    } catch (emailError) {
+      console.error("Purchase email error (non-blocking):", emailError);
+    }
 
     return NextResponse.json({
       received: true,

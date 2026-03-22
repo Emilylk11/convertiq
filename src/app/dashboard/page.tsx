@@ -11,6 +11,7 @@ import SupportButton from "@/components/SupportButton";
 import OnboardingBanner from "@/components/OnboardingBanner";
 import LowCreditWarning from "@/components/LowCreditWarning";
 import AuditHistoryClient from "@/components/AuditHistoryClient";
+import ReferralPanel from "@/components/ReferralPanel";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -404,6 +405,13 @@ export default async function DashboardPage({
                 Bulk Audit
               </a>
             )}
+          </div>
+        )}
+
+        {/* Referral panel */}
+        {tier !== "free" && (
+          <div className="mb-10">
+            <ReferralPanel />
           </div>
         )}
 
