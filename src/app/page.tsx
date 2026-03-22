@@ -124,10 +124,10 @@ export default async function Home() {
       <section className="border-y border-border/50 bg-surface/50">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8 sm:py-12 grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8 text-center">
           {[
-            { value: "2,400+", label: "Sites audited" },
-            { value: "23%", label: "Avg. conversion lift" },
-            { value: "<2 min", label: "Time to insights" },
-            { value: "97%", label: "Customer satisfaction" },
+            { value: "60 sec", label: "Average audit time" },
+            { value: "6", label: "Categories scored" },
+            { value: "$2.58", label: "Per audit (lowest)" },
+            { value: "10+", label: "Copy rewrites per report" },
           ].map((stat) => (
             <div key={stat.label}>
               <div className="text-2xl sm:text-3xl font-bold text-accent-bright">

@@ -1,3 +1,9 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Page Not Found",
+};
+
 export default function NotFound() {
   return (
     <div className="min-h-full bg-background text-foreground flex flex-col">
@@ -21,15 +27,23 @@ export default function NotFound() {
           <h1 className="text-xl sm:text-2xl font-bold mb-2">
             Page not found
           </h1>
-          <p className="text-muted text-sm mb-8 max-w-sm">
+          <p className="text-muted text-sm mb-8 max-w-sm mx-auto">
             This page doesn&apos;t exist or the report may have been removed.
           </p>
-          <a
-            href="/"
-            className="inline-block rounded-xl bg-gradient-to-r from-accent to-accent-dim px-8 py-3 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
-          >
-            Back to home
-          </a>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <a
+              href="/"
+              className="rounded-full bg-gradient-to-r from-accent to-accent-dim px-6 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
+            >
+              Go Home
+            </a>
+            <a
+              href="/pricing"
+              className="rounded-full border border-border/50 bg-surface/50 px-6 py-2.5 text-sm font-medium hover:bg-surface hover:border-border transition-all"
+            >
+              View Pricing
+            </a>
+          </div>
         </div>
       </div>
     </div>

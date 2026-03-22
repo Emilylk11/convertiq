@@ -13,10 +13,34 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://convert-iqs.com";
+
 export const metadata: Metadata = {
-  title: "ConvertIQ — AI-Powered Conversion Intelligence",
+  title: {
+    default: "ConvertIQ — AI-Powered Conversion Audits",
+    template: "%s — ConvertIQ",
+  },
   description:
-    "Get a free AI-powered audit of your website. Discover exactly where you're losing conversions and get actionable fixes in minutes.",
+    "Get a free AI-powered audit of your landing page. Discover exactly where you're losing conversions and get actionable fixes with ready-to-use copy rewrites in 60 seconds.",
+  metadataBase: new URL(APP_URL),
+  openGraph: {
+    type: "website",
+    siteName: "ConvertIQ",
+    title: "ConvertIQ — AI-Powered Conversion Audits",
+    description:
+      "Paste any URL, get a full conversion teardown in 60 seconds. AI scores your page across 6 categories and gives you exact copy rewrites. A CRO agency charges $5,000 — ConvertIQ does it for $2.58.",
+    url: APP_URL,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ConvertIQ — AI-Powered Conversion Audits",
+    description:
+      "Paste any URL, get a full conversion teardown in 60 seconds. AI-powered scoring, findings, and ready-to-deploy copy rewrites.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
