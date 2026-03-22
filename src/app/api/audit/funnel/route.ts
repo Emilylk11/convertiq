@@ -1,5 +1,4 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { authenticateAndRateLimit } from "@/lib/audit-helpers";
 import { runFunnelAudit } from "@/lib/claude";
@@ -38,16 +37,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Limit URL stages to 3 max to avoid serverless timeout
-    const urlStageCount = stages.filter((s: { type: string }) => s.type === "url").length;
-    if (urlStageCount > 3) {
-      return NextResponse.json(
-        { error: "Maximum 3 URL stages allowed. Use \"Paste Text\" for additional stages to avoid timeouts." },
-        { status: 400 }
-      );
-    }
-
     const admin = createAdminClient();
+
+    // Create audit record immediately
     const { data: audit, error: insertError } = await admin
       .from("audits")
       .insert({
@@ -68,66 +60,63 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use next/server `after()` to continue processing after the response is sent.
-    // This keeps the serverless function alive for the heavy work (scraping + Claude).
-    after(async () => {
-      try {
-        // Process stages — scrape URLs in parallel, keep text as-is
-        const processedStages = await Promise.all(
-          stages.map(async (stage: { type: string; content: string; stageName: string }) => {
-            if (stage.type === "url" && stage.content) {
-              try {
-                const scraped = await scrapeUrl(stage.content);
-                return {
-                  stageName: stage.stageName,
-                  content: `URL: ${stage.content}\nTitle: ${scraped.title}\nHeadings: ${scraped.headings.map((h: { level: number; text: string }) => h.text).join(", ")}\nCTAs: ${scraped.ctas.map((c: { text: string }) => c.text).join(", ")}\nContent: ${scraped.textContent.substring(0, 1500)}`,
-                };
-              } catch {
-                return {
-                  stageName: stage.stageName,
-                  content: `URL: ${stage.content} (could not be scraped)`,
-                };
-              }
+    // Process everything INLINE (no after()) — we have 300s on Vercel Pro
+    try {
+      // Scrape all URL stages in parallel for speed
+      const processedStages = await Promise.all(
+        stages.map(async (stage: { type: string; content: string; stageName: string }) => {
+          if (stage.type === "url" && stage.content) {
+            try {
+              const scraped = await scrapeUrl(stage.content);
+              return {
+                stageName: stage.stageName,
+                content: `URL: ${stage.content}\nTitle: ${scraped.title}\nHeadings: ${scraped.headings.map((h: { level: number; text: string }) => h.text).join(", ")}\nCTAs: ${scraped.ctas.map((c: { text: string }) => c.text).join(", ")}\nContent: ${scraped.textContent.substring(0, 1500)}`,
+              };
+            } catch {
+              return {
+                stageName: stage.stageName,
+                content: `URL: ${stage.content} (could not be scraped — site may block automated access)`,
+              };
             }
-            return {
-              stageName: stage.stageName,
-              content: stage.content.substring(0, 3000),
-            };
-          })
-        );
+          }
+          return {
+            stageName: stage.stageName,
+            content: stage.content.substring(0, 3000),
+          };
+        })
+      );
 
-        // Store scraped data
-        await admin
-          .from("audits")
-          .update({ scraped_data: { stages: processedStages } })
-          .eq("id", audit.id);
+      // Store scraped data
+      await admin
+        .from("audits")
+        .update({ scraped_data: { stages: processedStages } })
+        .eq("id", audit.id);
 
-        // Run funnel audit via Claude
-        const results = await runFunnelAudit(processedStages, auditContext);
+      // Run funnel audit via Claude
+      const results = await runFunnelAudit(processedStages, auditContext);
 
-        await admin
-          .from("audits")
-          .update({
-            status: "completed",
-            results,
-            overall_score: results.overallScore,
-          })
-          .eq("id", audit.id);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        console.error("Funnel after() error:", message);
+      await admin
+        .from("audits")
+        .update({
+          status: "completed",
+          results,
+          overall_score: results.overallScore,
+        })
+        .eq("id", audit.id);
+    } catch (processingError) {
+      const message = processingError instanceof Error ? processingError.message : String(processingError);
+      console.error("Funnel processing error:", message);
 
-        await admin
-          .from("audits")
-          .update({
-            status: "failed",
-            error_message: message.substring(0, 500),
-          })
-          .eq("id", audit.id);
-      }
-    });
+      await admin
+        .from("audits")
+        .update({
+          status: "failed",
+          error_message: message.substring(0, 500),
+        })
+        .eq("id", audit.id);
+    }
 
-    // Return immediately — client redirects to /audit/[id] which polls
+    // Return the auditId — client redirects to /audit/[id] which shows results or error
     return NextResponse.json({ auditId: audit.id });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
