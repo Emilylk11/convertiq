@@ -115,19 +115,10 @@ export default async function AuditPage({
             userTier={userTier}
           />
         ) : record.status === "failed" ? (
-          <div className="text-center py-16 sm:py-20">
-            <div className="text-4xl mb-4">&#10060;</div>
-            <h1 className="text-xl sm:text-2xl font-bold mb-2">Audit failed</h1>
-            <p className="text-muted mb-6 max-w-sm mx-auto text-sm sm:text-base">
-              {record.error_message || "Something went wrong during the audit."}
-            </p>
-            <a
-              href={isLoggedIn ? "/dashboard/new-audit" : "/#free-audit"}
-              className="inline-block rounded-xl bg-gradient-to-r from-accent to-accent-dim px-8 py-3.5 text-base font-semibold text-white hover:opacity-90 transition-opacity"
-            >
-              Try Again
-            </a>
-          </div>
+          <AuditFailedState
+            errorMessage={record.error_message}
+            isLoggedIn={isLoggedIn}
+          />
         ) : (
           <AuditReportPolling auditId={record.id} />
         )}
@@ -138,6 +129,86 @@ export default async function AuditPage({
 
       {/* Feedback prompt — appears 3s after page load */}
       <FeedbackPrompt auditId={id} />
+    </div>
+  );
+}
+
+function AuditFailedState({
+  errorMessage,
+  isLoggedIn,
+}: {
+  errorMessage: string | null;
+  isLoggedIn: boolean;
+}) {
+  const msg = errorMessage?.toLowerCase() || "";
+
+  let icon = "❌";
+  let title = "Audit failed";
+  let description =
+    errorMessage || "Something went wrong during the audit.";
+  let suggestion = "";
+
+  if (msg.includes("timeout") || msg.includes("timed out")) {
+    icon = "⏱️";
+    title = "Page took too long to respond";
+    description =
+      "The page didn't load within 60 seconds. This usually means the server is slow or the page is very large.";
+    suggestion = "Try again during off-peak hours, or audit a different page on the site.";
+  } else if (
+    msg.includes("unreachable") ||
+    msg.includes("enotfound") ||
+    msg.includes("dns") ||
+    msg.includes("could not resolve")
+  ) {
+    icon = "🌐";
+    title = "Page not reachable";
+    description =
+      "We couldn't connect to this URL. The domain may be misspelled, offline, or blocking requests.";
+    suggestion = "Double-check the URL and make sure the site is publicly accessible.";
+  } else if (
+    msg.includes("blocked") ||
+    msg.includes("403") ||
+    msg.includes("captcha") ||
+    msg.includes("bot")
+  ) {
+    icon = "🛡️";
+    title = "Site blocked our scraper";
+    description =
+      "This site has bot protection that prevented us from reading the page content.";
+    suggestion =
+      "Try a text-based audit instead — paste the page content directly into an Email or Ad Copy audit.";
+  } else if (msg.includes("not found") || msg.includes("404")) {
+    icon = "🔍";
+    title = "Page not found (404)";
+    description =
+      "The URL returned a 404 error. The page may have been moved or deleted.";
+    suggestion = "Check the URL and try again with the correct page address.";
+  } else if (msg.includes("rate limit") || msg.includes("too many")) {
+    icon = "🚦";
+    title = "Rate limit reached";
+    description =
+      "Too many audit requests in a short time. Please wait a moment.";
+    suggestion = "Wait a minute and try again.";
+  }
+
+  return (
+    <div className="text-center py-16 sm:py-20">
+      <div className="text-4xl mb-4">{icon}</div>
+      <h1 className="text-xl sm:text-2xl font-bold mb-2">{title}</h1>
+      <p className="text-muted mb-2 max-w-md mx-auto text-sm sm:text-base">
+        {description}
+      </p>
+      {suggestion && (
+        <p className="text-xs text-muted/70 mb-6 max-w-sm mx-auto">
+          💡 {suggestion}
+        </p>
+      )}
+      <a
+        href={isLoggedIn ? "/dashboard/new-audit" : "/#free-audit"}
+        className="inline-block rounded-xl bg-gradient-to-r from-accent to-accent-dim px-8 py-3.5 text-base font-semibold text-white hover:opacity-90 transition-opacity"
+      >
+        Try Again
+      </a>
     </div>
   );
 }
