@@ -10,6 +10,7 @@ import DashboardMobileNav from "@/components/DashboardMobileNav";
 import ThemeToggle from "@/components/ThemeToggle";
 import SignOutButton from "@/components/SignOutButton";
 import SupportButton from "@/components/SupportButton";
+import FeedbackPrompt from "@/components/FeedbackPrompt";
 
 export default async function AuditPage({
   params,
@@ -172,6 +173,9 @@ export default async function AuditPage({
 
       {/* Floating support button */}
       <SupportButton />
+
+      {/* Feedback prompt — appears 3s after page load */}
+      <FeedbackPrompt auditId={id} />
     </div>
   );
 }
