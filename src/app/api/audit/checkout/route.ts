@@ -3,6 +3,8 @@ import { authenticateAndRateLimit, createAndRunAudit } from "@/lib/audit-helpers
 import { runCheckoutAudit } from "@/lib/claude";
 import { scrapeUrl, isPrivateUrl } from "@/lib/scraper";
 
+export const maxDuration = 120;
+
 export async function POST(request: NextRequest) {
   try {
     const auth = await authenticateAndRateLimit(request);
