@@ -27,6 +27,10 @@ function emailWrapper(content: string): string {
       <a href="${APP_URL()}/dashboard" style="color:#71717a;text-decoration:underline;">Dashboard</a> &middot;
       <a href="mailto:support@convertiq.io" style="color:#71717a;text-decoration:underline;">Support</a>
     </p>
+    <p style="margin-top:16px;color:#3f3f46;font-size:10px;text-align:center;">
+      You're receiving this because you have a ConvertIQ account or requested an audit.<br>
+      <a href="mailto:support@convertiq.io?subject=Unsubscribe&body=Please%20unsubscribe%20me%20from%20ConvertIQ%20emails." style="color:#52525b;text-decoration:underline;">Unsubscribe</a> from future emails.
+    </p>
   </div>
 </body>
 </html>`;

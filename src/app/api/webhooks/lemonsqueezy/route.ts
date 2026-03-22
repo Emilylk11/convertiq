@@ -3,7 +3,7 @@ import { verifyWebhookSignature, VARIANT_CREDIT_MAP } from "@/lib/lemonsqueezy";
 import { addCredits } from "@/lib/credits";
 import { createAdminClient } from "@/lib/supabase/server";
 import { rewardReferrerOnConversion } from "@/lib/referrals";
-import { sendLowCreditEmail, sendWelcomePurchaseEmail } from "@/lib/resend";
+import { sendWelcomePurchaseEmail } from "@/lib/resend";
 
 export async function POST(request: NextRequest) {
   try {
@@ -55,16 +55,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const orderId = String(order.id);
+    const supabase = createAdminClient();
+
+    // ─── IDEMPOTENCY CHECK ───────────────────────────
+    // Prevent double-credit if Lemon Squeezy retries the webhook
+    const { data: existingTx } = await supabase
+      .from("credit_transactions")
+      .select("id")
+      .eq("lemon_squeezy_order_id", orderId)
+      .limit(1)
+      .single();
+
+    if (existingTx) {
+      console.log(`Order ${orderId} already processed, skipping (idempotent)`);
+      return NextResponse.json({
+        received: true,
+        already_processed: true,
+      });
+    }
+
     // Add credits to user's balance
     const newBalance = await addCredits(userId, creditsToAdd);
 
     // Log the transaction
-    const supabase = createAdminClient();
     await supabase.from("credit_transactions").insert({
       user_id: userId,
       amount: creditsToAdd,
       type: "purchase",
-      lemon_squeezy_order_id: String(order.id),
+      lemon_squeezy_order_id: orderId,
       variant_id: variantId,
       balance_after: newBalance,
     });
@@ -80,24 +99,15 @@ export async function POST(request: NextRequest) {
       console.error("Referral reward error (non-blocking):", refError);
     }
 
-    // Send welcome/purchase confirmation email (non-blocking)
+    // Send purchase confirmation email (non-blocking)
     try {
-      const { data: userData } = await supabase
-        .from("credits")
-        .select("user_id")
-        .eq("user_id", userId)
-        .single();
-
-      if (userData) {
-        // Get user email from auth
-        const { data: { user: authUser } } = await supabase.auth.admin.getUserById(userId);
-        if (authUser?.email) {
-          await sendWelcomePurchaseEmail({
-            to: authUser.email,
-            creditsAdded: creditsToAdd,
-            newBalance: newBalance,
-          });
-        }
+      const { data: { user: authUser } } = await supabase.auth.admin.getUserById(userId);
+      if (authUser?.email) {
+        await sendWelcomePurchaseEmail({
+          to: authUser.email,
+          creditsAdded: creditsToAdd,
+          newBalance: newBalance,
+        });
       }
     } catch (emailError) {
       console.error("Purchase email error (non-blocking):", emailError);
