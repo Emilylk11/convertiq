@@ -3,6 +3,7 @@ import MobileNav from "@/components/MobileNav";
 import ThemeToggle from "@/components/ThemeToggle";
 import ReferralCapture from "@/components/ReferralCapture";
 import UTMCapture from "@/components/UTMCapture";
+import Logo from "@/components/Logo";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 
@@ -22,14 +23,7 @@ export default async function Home() {
       {/* Nav */}
       <nav className="fixed top-0 inset-x-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto max-w-6xl flex items-center justify-between px-4 sm:px-6 h-16">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-accent to-accent-dim flex items-center justify-center font-mono text-sm font-bold text-white shrink-0">
-              C
-            </div>
-            <span className="text-lg font-semibold tracking-tight">
-              Convert<span className="text-accent-bright">IQ</span>
-            </span>
-          </div>
+          <Logo href="/" />
           <div className="hidden sm:flex items-center gap-8 text-sm text-muted">
             <a href="#how-it-works" className="hover:text-foreground transition-colors">
               How It Works
@@ -288,14 +282,7 @@ export default async function Home() {
       <footer className="border-t border-border/50 bg-surface/30">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10 sm:py-12">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-2">
-              <div className="h-6 w-6 rounded-md bg-gradient-to-br from-accent to-accent-dim flex items-center justify-center font-mono text-xs font-bold text-white">
-                C
-              </div>
-              <span className="text-sm font-medium">
-                Convert<span className="text-accent-bright">IQ</span>
-              </span>
-            </div>
+            <Logo href="/" size="small" />
             <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted">
               <a href="/examples" className="hover:text-foreground transition-colors">
                 Examples

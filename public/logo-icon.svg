@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <!-- Logo Mark Only - for favicon, app icon -->
+  <g>
+    <!-- Outer arc -->
+    <path d="M8 36 C8 16 28 4 40 4" stroke="url(#grad2)" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.4"/>
+    <!-- Middle arc -->
+    <path d="M14 34 C14 20 28 10 38 10" stroke="url(#grad2)" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.7"/>
+    <!-- Inner arc -->
+    <path d="M20 32 C20 24 28 16 36 16" stroke="url(#grad2)" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <!-- Upward arrow -->
+    <path d="M30 38 L30 20 M24 26 L30 20 L36 26" stroke="#c084fc" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <defs>
+    <linearGradient id="grad2" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#c084fc"/>
+    </linearGradient>
+  </defs>
+</svg>

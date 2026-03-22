@@ -32,6 +32,14 @@ export const metadata: Metadata = {
     description:
       "Paste any URL, get a full conversion teardown in 60 seconds. AI scores your page across 6 categories and gives you exact copy rewrites. A CRO agency charges $5,000 — ConvertIQ does it for $2.58.",
     url: APP_URL,
+    images: [
+      {
+        url: `${APP_URL}/og-image.png`,
+        width: 1200,
+        height: 630,
+        alt: "ConvertIQ — AI-Powered Conversion Audits",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
