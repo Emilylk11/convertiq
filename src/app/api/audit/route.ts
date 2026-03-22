@@ -26,6 +26,7 @@ export async function POST(request: NextRequest) {
 
     // Check if user is logged in for tier features & credit deduction
     let userId: string | null = null;
+    let userEmail: string | null = null;
     let isPriority = false;
     let auditType: "free" | "full" = "free";
 
@@ -34,6 +35,7 @@ export async function POST(request: NextRequest) {
       const { data: { user } } = await authClient.auth.getUser();
       if (user) {
         userId = user.id;
+        userEmail = user.email || null;
         const tier = await getUserTier(user.id);
         isPriority = hasPriorityProcessing(tier);
         if (tier !== "free") {
@@ -70,10 +72,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Resolve email: logged-in users use session email, guests must provide one
+    const resolvedEmail = userEmail || email;
+
     // Validate input
-    if (!url || !email) {
+    if (!url || !resolvedEmail) {
       return NextResponse.json(
-        { error: "URL and email are required" },
+        { error: userId ? "URL is required" : "URL and email are required" },
         { status: 400 }
       );
     }
@@ -100,7 +105,7 @@ export async function POST(request: NextRequest) {
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-    if (!emailRegex.test(email)) {
+    if (!emailRegex.test(resolvedEmail)) {
       return NextResponse.json(
         { error: "Please enter a valid email address" },
         { status: 400 }
@@ -135,7 +140,7 @@ export async function POST(request: NextRequest) {
 
     const insertPayload: Record<string, unknown> = {
       url: parsedUrl.toString(),
-      email,
+      email: resolvedEmail,
       audit_type: auditType,
       status: "pending",
       expires_at: expiresAt.toISOString(),
@@ -217,7 +222,7 @@ export async function POST(request: NextRequest) {
     // Send email (non-blocking — don't fail the request if email fails)
     try {
       await sendAuditEmail({
-        to: email,
+        to: resolvedEmail,
         auditId: audit.id,
         url: parsedUrl.toString(),
         results,
@@ -231,7 +236,7 @@ export async function POST(request: NextRequest) {
       try {
         const remainingBalance = await getCreditBalance(userId);
         if (remainingBalance > 0 && remainingBalance <= 2) {
-          await sendLowCreditEmail({ to: email, balance: remainingBalance });
+          await sendLowCreditEmail({ to: resolvedEmail, balance: remainingBalance });
         }
       } catch (lowCreditError) {
         console.error("Low credit email failed:", lowCreditError);
