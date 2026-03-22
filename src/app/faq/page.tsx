@@ -82,7 +82,7 @@ const FAQ_SECTIONS = [
     items: [
       {
         q: "What audit types are available?",
-        a: "Our flagship Landing Page Audit is live now — it covers CTA placement, copy effectiveness, trust signals, UX, page speed, and mobile responsiveness. We're building 4 more audit types (Email Sequence, Ad Copy, Checkout Flow, and Full Funnel) and will announce them as they launch.",
+        a: "All 5 audit types are live: Landing Page, Email Sequence, Ad Copy, Checkout Flow, and Full Funnel. Each uses specialized AI analysis tuned to its format — for example, the email audit scores subject lines and deliverability, while the checkout audit focuses on friction points and payment UX.",
       },
       {
         q: "What's the difference between a landing page audit and a full funnel audit?",

@@ -1,33 +1,10 @@
-import type { AuditResults, AuditFinding } from "@/lib/types";
+import type { AuditResults } from "@/lib/types";
+import { getCategoryLabel, scoreColor } from "@/lib/audit-categories";
 import ScoreGauge from "./ScoreGauge";
 import ReportSection from "./ReportSection";
 import CopyButton from "./CopyButton";
 import ShareButton from "./ShareButton";
 import ReAuditButton from "./ReAuditButton";
-
-const CATEGORIES: AuditFinding["category"][] = [
-  "cta",
-  "copy",
-  "trust",
-  "ux",
-  "speed",
-  "mobile",
-];
-
-const categoryLabels: Record<string, string> = {
-  cta: "CTA",
-  copy: "Copy",
-  trust: "Trust",
-  ux: "UX",
-  speed: "Speed",
-  mobile: "Mobile",
-};
-
-function scoreColor(score: number) {
-  if (score >= 70) return "text-green-400";
-  if (score >= 40) return "text-yellow-400";
-  return "text-red-400";
-}
 
 export default function AuditReport({
   results,
@@ -40,6 +17,8 @@ export default function AuditReport({
   auditId: string;
   isSharedView?: boolean;
 }) {
+  const categories = Object.keys(results.categoryScores);
+
   return (
     <div>
       {/* Header */}
@@ -85,8 +64,8 @@ export default function AuditReport({
       )}
 
       {/* Category scores */}
-      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3 mb-8">
-        {CATEGORIES.map((cat) => (
+      <div className={`grid grid-cols-3 ${categories.length <= 6 ? "sm:grid-cols-6" : "sm:grid-cols-" + categories.length} gap-2 sm:gap-3 mb-8`}>
+        {categories.map((cat) => (
           <div
             key={cat}
             className="rounded-xl border border-border/50 bg-surface/50 p-3 sm:p-4 text-center"
@@ -94,7 +73,9 @@ export default function AuditReport({
             <div className={`text-lg sm:text-xl font-bold ${scoreColor(results.categoryScores[cat])}`}>
               {results.categoryScores[cat]}
             </div>
-            <div className="text-xs text-muted mt-1 uppercase">{categoryLabels[cat]}</div>
+            <div className="text-xs text-muted mt-1 uppercase">
+              {getCategoryLabel(cat)}
+            </div>
           </div>
         ))}
       </div>
@@ -137,7 +118,7 @@ export default function AuditReport({
       )}
 
       {/* Findings by category */}
-      {CATEGORIES.map((cat) => {
+      {categories.map((cat) => {
         const catFindings = results.findings.filter((f) => f.category === cat);
         return (
           <ReportSection

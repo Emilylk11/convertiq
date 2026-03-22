@@ -1,19 +1,11 @@
 import type { AuditFinding } from "@/lib/types";
+import { getCategoryLabel } from "@/lib/audit-categories";
 import CopyButton from "./CopyButton";
 
 const severityStyles = {
   critical: "bg-red-500/10 text-red-400 border-red-500/20",
   warning: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
   info: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-};
-
-const categoryLabels: Record<AuditFinding["category"], string> = {
-  cta: "CTA",
-  copy: "Copy",
-  trust: "Trust",
-  ux: "UX",
-  speed: "Speed",
-  mobile: "Mobile",
 };
 
 export default function FindingCard({
@@ -34,7 +26,7 @@ export default function FindingCard({
           {finding.severity}
         </span>
         <span className="text-xs text-muted font-mono uppercase">
-          {categoryLabels[finding.category]}
+          {getCategoryLabel(finding.category)}
         </span>
         {finding.estimatedConversionLift && finding.estimatedConversionLift > 0 ? (
           <span className="ml-auto text-xs text-green-400 font-medium">

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { scoreColor } from "@/lib/audit-categories";
 import OutOfCreditsModal from "./OutOfCreditsModal";
 
 const PROGRESS_STEPS = [
@@ -30,12 +31,6 @@ interface ComparisonResult {
     yourFindingsCount: number;
     competitorFindingsCount: number;
   };
-}
-
-function scoreColor(score: number) {
-  if (score >= 70) return "text-green-400";
-  if (score >= 40) return "text-yellow-400";
-  return "text-red-400";
 }
 
 function ScoreRing({ score, label, size = 80 }: { score: number; label: string; size?: number }) {

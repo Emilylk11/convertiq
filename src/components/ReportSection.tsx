@@ -1,23 +1,6 @@
 import type { AuditFinding } from "@/lib/types";
+import { getCategoryFullLabel, getCategoryIcon } from "@/lib/audit-categories";
 import FindingCard from "./FindingCard";
-
-const categoryIcons: Record<AuditFinding["category"], string> = {
-  cta: "🎯",
-  copy: "✍️",
-  trust: "🛡️",
-  ux: "🧭",
-  speed: "⚡",
-  mobile: "📱",
-};
-
-const categoryLabels: Record<AuditFinding["category"], string> = {
-  cta: "Calls to Action",
-  copy: "Copy & Messaging",
-  trust: "Trust Signals",
-  ux: "User Experience",
-  speed: "Page Speed",
-  mobile: "Mobile Experience",
-};
 
 export default function ReportSection({
   category,
@@ -25,7 +8,7 @@ export default function ReportSection({
   findings,
   blurAfter,
 }: {
-  category: AuditFinding["category"];
+  category: string;
   score: number;
   findings: AuditFinding[];
   blurAfter?: number;
@@ -35,8 +18,10 @@ export default function ReportSection({
   return (
     <div className="mb-8">
       <div className="flex items-center gap-3 mb-4">
-        <span className="text-xl">{categoryIcons[category]}</span>
-        <h2 className="text-lg font-semibold">{categoryLabels[category]}</h2>
+        <span className="text-xl">{getCategoryIcon(category)}</span>
+        <h2 className="text-lg font-semibold">
+          {getCategoryFullLabel(category)}
+        </h2>
         <span className="ml-auto text-sm font-mono text-muted">
           {score}/100
         </span>

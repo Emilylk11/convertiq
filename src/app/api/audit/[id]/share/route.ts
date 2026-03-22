@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 
 export async function POST(
   _req: NextRequest,
@@ -7,17 +7,47 @@ export async function POST(
 ) {
   const { id } = await params;
 
+  // 1. Require authentication
+  let userId: string;
+  try {
+    const authClient = await createClient();
+    const {
+      data: { user },
+    } = await authClient.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "Authentication required. Please sign in to share reports." },
+        { status: 401 }
+      );
+    }
+    userId = user.id;
+  } catch {
+    return NextResponse.json(
+      { error: "Authentication required" },
+      { status: 401 }
+    );
+  }
+
   const supabase = createAdminClient();
 
-  // Check audit exists and is completed
+  // 2. Check audit exists and is completed
   const { data: audit, error: fetchError } = await supabase
     .from("audits")
-    .select("id, status, share_token")
+    .select("id, status, share_token, user_id")
     .eq("id", id)
     .single();
 
   if (fetchError || !audit) {
     return NextResponse.json({ error: "Audit not found" }, { status: 404 });
+  }
+
+  // 3. Verify ownership — user must own this audit
+  if (!audit.user_id || audit.user_id !== userId) {
+    return NextResponse.json(
+      { error: "You do not have permission to share this audit" },
+      { status: 403 }
+    );
   }
 
   if (audit.status !== "completed") {

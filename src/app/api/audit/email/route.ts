@@ -12,8 +12,13 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     const rateLimitKey = user?.id || request.headers.get("x-forwarded-for") || "anonymous";
-    if (!rateLimit(rateLimitKey, 5, 60000)) {
-      return NextResponse.json({ error: "Too many requests. Please wait a minute." }, { status: 429 });
+    const rl = rateLimit(rateLimitKey, 5, 60000);
+    if (!rl.allowed) {
+      const waitSec = Math.ceil(rl.retryAfterMs / 1000);
+      return NextResponse.json(
+        { error: `Too many requests. Please wait ${waitSec} seconds.` },
+        { status: 429, headers: { "Retry-After": String(waitSec) } }
+      );
     }
 
     const body = await request.json();

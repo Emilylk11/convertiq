@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { scoreColor } from "@/lib/audit-categories";
 import OutOfCreditsModal from "./OutOfCreditsModal";
 
 interface BulkResult {
@@ -15,12 +16,6 @@ interface BulkResult {
     score: number | null;
     error?: string;
   }[];
-}
-
-function scoreColor(score: number) {
-  if (score >= 70) return "text-green-400";
-  if (score >= 40) return "text-yellow-400";
-  return "text-red-400";
 }
 
 export default function BulkAuditForm() {

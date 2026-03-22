@@ -17,6 +17,8 @@ export interface AuditContext {
   avgOrderValue?: number;
 }
 
+const CLAUDE_TIMEOUT_MS = 60_000; // 60 second timeout for Claude API calls
+
 export async function runLandingPageAudit(
   scrapedData: ScrapedPageData,
   context?: AuditContext
@@ -27,7 +29,7 @@ export async function runLandingPageAudit(
       "ANTHROPIC_API_KEY is not set. Check your .env.local file."
     );
   }
-  const anthropic = new Anthropic({ apiKey });
+  const anthropic = new Anthropic({ apiKey, timeout: CLAUDE_TIMEOUT_MS });
 
   const message = await anthropic.messages.create({
     model: "claude-sonnet-4-6",
@@ -83,7 +85,7 @@ async function runTextAudit(
 ): Promise<AuditResults> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY is not set.");
-  const anthropic = new Anthropic({ apiKey });
+  const anthropic = new Anthropic({ apiKey, timeout: CLAUDE_TIMEOUT_MS });
 
   const message = await anthropic.messages.create({
     model: "claude-sonnet-4-6",
@@ -105,6 +107,19 @@ async function runTextAudit(
   if (typeof parsed.overallScore !== "number" || !Array.isArray(parsed.findings) || !parsed.categoryScores) {
     throw new Error("Invalid audit response structure");
   }
+
+  // Clamp overall score to 0-100
+  parsed.overallScore = Math.max(0, Math.min(100, Math.round(parsed.overallScore)));
+
+  // Clamp category scores to 0-100
+  for (const key of Object.keys(parsed.categoryScores)) {
+    parsed.categoryScores[key] = Math.max(0, Math.min(100, Math.round(parsed.categoryScores[key])));
+  }
+
+  // Validate findings have required fields
+  parsed.findings = parsed.findings.filter(
+    (f) => f && typeof f.id === "string" && typeof f.title === "string" && f.category && f.severity
+  );
 
   return parsed;
 }

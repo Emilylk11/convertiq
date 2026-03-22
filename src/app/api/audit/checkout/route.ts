@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { getUserTier } from "@/lib/tiers";
 import { deductCredit } from "@/lib/credits";
 import { runCheckoutAudit } from "@/lib/claude";
-import { scrapeUrl } from "@/lib/scraper";
+import { scrapeUrl, isPrivateUrl } from "@/lib/scraper";
 import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
@@ -12,8 +12,13 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     const rateLimitKey = user?.id || request.headers.get("x-forwarded-for") || "anonymous";
-    if (!rateLimit(rateLimitKey, 5, 60000)) {
-      return NextResponse.json({ error: "Too many requests. Please wait a minute." }, { status: 429 });
+    const rl = rateLimit(rateLimitKey, 5, 60000);
+    if (!rl.allowed) {
+      const waitSec = Math.ceil(rl.retryAfterMs / 1000);
+      return NextResponse.json(
+        { error: `Too many requests. Please wait ${waitSec} seconds.` },
+        { status: 429, headers: { "Retry-After": String(waitSec) } }
+      );
     }
 
     const body = await request.json();
@@ -21,6 +26,10 @@ export async function POST(request: NextRequest) {
 
     if (!url || typeof url !== "string") {
       return NextResponse.json({ error: "Please provide a checkout URL." }, { status: 400 });
+    }
+
+    if (isPrivateUrl(url)) {
+      return NextResponse.json({ error: "Private or internal URLs cannot be audited." }, { status: 400 });
     }
 
     let userId: string | null = null;

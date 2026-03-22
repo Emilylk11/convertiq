@@ -4,23 +4,7 @@ import FindingCard from "@/components/FindingCard";
 import CopyButton from "@/components/CopyButton";
 import MobileNav from "@/components/MobileNav";
 import ThemeToggle from "@/components/ThemeToggle";
-
-const categoryLabels: Record<string, string> = {
-  cta: "CTA",
-  copy: "Copy",
-  trust: "Trust",
-  ux: "UX",
-  speed: "Speed",
-  mobile: "Mobile",
-};
-
-const CATEGORIES = ["cta", "copy", "trust", "ux", "speed", "mobile"] as const;
-
-function scoreColor(score: number) {
-  if (score >= 70) return "text-green-400";
-  if (score >= 40) return "text-yellow-400";
-  return "text-red-400";
-}
+import { getCategoryLabel, scoreColor } from "@/lib/audit-categories";
 
 export default function ExamplesPage() {
   return (
@@ -143,7 +127,7 @@ export default function ExamplesPage() {
 
               {/* Category scores */}
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3 mb-8">
-                {CATEGORIES.map((cat) => (
+                {Object.keys(sample.results.categoryScores).map((cat) => (
                   <div
                     key={cat}
                     className="rounded-xl border border-border/50 bg-surface/50 p-3 text-center"
@@ -154,7 +138,7 @@ export default function ExamplesPage() {
                       {sample.results.categoryScores[cat]}
                     </div>
                     <div className="text-xs text-muted mt-0.5 uppercase">
-                      {categoryLabels[cat]}
+                      {getCategoryLabel(cat)}
                     </div>
                   </div>
                 ))}

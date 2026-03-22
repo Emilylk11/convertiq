@@ -12,8 +12,13 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     const rateLimitKey = user?.id || request.headers.get("x-forwarded-for") || "anonymous";
-    if (!rateLimit(rateLimitKey, 3, 60000)) {
-      return NextResponse.json({ error: "Too many requests. Please wait a minute." }, { status: 429 });
+    const rl = rateLimit(rateLimitKey, 3, 60000);
+    if (!rl.allowed) {
+      const waitSec = Math.ceil(rl.retryAfterMs / 1000);
+      return NextResponse.json(
+        { error: `Too many requests. Please wait ${waitSec} seconds.` },
+        { status: 429, headers: { "Retry-After": String(waitSec) } }
+      );
     }
 
     const body = await request.json();
@@ -34,10 +39,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Upgrade to use funnel audit." }, { status: 403 });
     }
 
-    // Deduct 2 credits for funnel audit
-    const success1 = await deductCredit(user.id);
-    const success2 = await deductCredit(user.id);
-    if (!success1 || !success2) {
+    // Deduct 2 credits atomically for funnel audit
+    const success = await deductCredit(user.id, 2);
+    if (!success) {
       return NextResponse.json({ error: "Insufficient credits. Funnel audit costs 2 credits." }, { status: 402 });
     }
 

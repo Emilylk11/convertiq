@@ -78,7 +78,7 @@ export async function deductCredit(
 ): Promise<boolean> {
   const supabase = createAdminClient();
 
-  // Try atomic RPC first — does SELECT FOR UPDATE + check + deduct in one transaction
+  // Atomic RPC — does SELECT FOR UPDATE + check + deduct in one transaction
   const { data, error } = await supabase.rpc("deduct_credits", {
     p_user_id: userId,
     p_amount: amount,
@@ -89,26 +89,9 @@ export async function deductCredit(
     return (data as number) >= 0;
   }
 
-  // Fallback if RPC doesn't exist yet (pre-migration)
-  console.warn(
-    "deduct_credits RPC not available, using fallback:",
-    error?.message
+  // If RPC doesn't exist, fail safely rather than use a non-atomic fallback
+  console.error("deduct_credits RPC failed:", error?.message);
+  throw new Error(
+    "Credit deduction service unavailable. Please try again in a moment."
   );
-  const currentBalance = await getCreditBalance(userId);
-
-  if (currentBalance < amount) {
-    return false;
-  }
-
-  const { error: updateError } = await supabase
-    .from("credits")
-    .update({ balance: currentBalance - amount })
-    .eq("user_id", userId);
-
-  if (updateError) {
-    console.error("Error deducting credit:", updateError);
-    return false;
-  }
-
-  return true;
 }
