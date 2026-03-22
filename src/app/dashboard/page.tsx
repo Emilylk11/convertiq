@@ -330,40 +330,33 @@ export default async function DashboardPage({
           </div>
         )}
 
-        {/* Quick actions — tier-aware */}
+        {/* Audit types grid */}
         {tier !== "free" && (
-          <div className="flex flex-wrap gap-3 mb-10">
-            <a
-              href="/dashboard/new-audit"
-              className="inline-flex items-center gap-2 rounded-xl border border-border/50 bg-surface/30 px-4 py-2.5 text-sm font-medium hover:bg-surface/60 hover:border-border transition-all"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              Run New Audit
-            </a>
-            {(tier === "growth" || tier === "agency") && (
-              <a
-                href="/dashboard/competitors"
-                className="inline-flex items-center gap-2 rounded-xl border border-border/50 bg-surface/30 px-4 py-2.5 text-sm font-medium hover:bg-surface/60 hover:border-border transition-all"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-                Compare Competitors
+          <div className="mb-10">
+            <h2 className="text-sm font-semibold text-muted uppercase tracking-wider mb-3">Run an Audit</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              <a href="/dashboard/new-audit" className="rounded-xl border border-border/50 bg-surface/30 p-4 hover:bg-surface/60 hover:border-accent/30 transition-all text-center">
+                <span className="text-2xl block mb-2">&#127919;</span>
+                <span className="text-xs font-medium">Landing Page</span>
               </a>
-            )}
-            {tier === "agency" && (
-              <a
-                href="/dashboard/bulk-audit"
-                className="inline-flex items-center gap-2 rounded-xl border border-border/50 bg-surface/30 px-4 py-2.5 text-sm font-medium hover:bg-surface/60 hover:border-border transition-all"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                </svg>
-                Bulk Audit
+              <a href="/dashboard/email-audit" className="rounded-xl border border-border/50 bg-surface/30 p-4 hover:bg-surface/60 hover:border-accent/30 transition-all text-center">
+                <span className="text-2xl block mb-2">&#128231;</span>
+                <span className="text-xs font-medium">Email</span>
               </a>
-            )}
+              <a href="/dashboard/ad-audit" className="rounded-xl border border-border/50 bg-surface/30 p-4 hover:bg-surface/60 hover:border-accent/30 transition-all text-center">
+                <span className="text-2xl block mb-2">&#128226;</span>
+                <span className="text-xs font-medium">Ad Copy</span>
+              </a>
+              <a href="/dashboard/checkout-audit" className="rounded-xl border border-border/50 bg-surface/30 p-4 hover:bg-surface/60 hover:border-accent/30 transition-all text-center">
+                <span className="text-2xl block mb-2">&#128722;</span>
+                <span className="text-xs font-medium">Checkout</span>
+              </a>
+              <a href="/dashboard/funnel-audit" className="rounded-xl border border-border/50 bg-surface/30 p-4 hover:bg-surface/60 hover:border-accent/30 transition-all text-center">
+                <span className="text-2xl block mb-2">&#128260;</span>
+                <span className="text-xs font-medium">Full Funnel</span>
+                <span className="block text-[10px] text-amber-400 mt-0.5">2 credits</span>
+              </a>
+            </div>
           </div>
         )}
 

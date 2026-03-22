@@ -103,30 +103,35 @@ const AUDIT_TYPES = [
     desc: "CTA placement, copy, trust signals, UX, speed, mobile — the full conversion teardown.",
     icon: "&#127919;",
     available: true,
+    href: "/dashboard/new-audit",
   },
   {
     name: "Email Sequence Audit",
     desc: "Subject lines, open-rate signals, CTA clarity, and sequence flow analysis.",
     icon: "&#128231;",
-    available: false,
+    available: true,
+    href: "/dashboard/email-audit",
   },
   {
     name: "Ad Copy Audit",
     desc: "Hook strength, offer clarity, audience alignment, and click-through optimisation.",
     icon: "&#128226;",
-    available: false,
+    available: true,
+    href: "/dashboard/ad-audit",
   },
   {
     name: "Checkout Flow Audit",
     desc: "Cart abandonment signals, friction points, trust elements, and payment UX.",
     icon: "&#128722;",
-    available: false,
+    available: true,
+    href: "/dashboard/checkout-audit",
   },
   {
     name: "Full Funnel Audit",
-    desc: "End-to-end analysis from ad to landing page to checkout — every conversion leak.",
+    desc: "End-to-end analysis from ad to landing page to checkout — every conversion leak. Costs 2 credits.",
     icon: "&#128260;",
-    available: false,
+    available: true,
+    href: "/dashboard/funnel-audit",
   },
 ];
 
@@ -469,34 +474,25 @@ export default async function PricingPage() {
                 <span className="text-accent-bright">&amp; roadmap</span>
               </h2>
               <p className="text-muted text-base sm:text-lg max-w-xl mx-auto">
-                Our Landing Page Audit is live. More audit types are in
-                development — your credits will work for all of them.
+                All 5 audit types are live. Your credits work across all of them.
               </p>
             </div>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {AUDIT_TYPES.map((type) => (
-                <div
+                <a
                   key={type.name}
-                  className={`rounded-2xl border p-6 transition-colors ${
-                    type.available
-                      ? "border-border/50 bg-surface/50 hover:border-accent/30"
-                      : "border-dashed border-border/30 bg-surface/20 opacity-70"
-                  }`}
+                  href={type.href}
+                  className="rounded-2xl border border-border/50 bg-surface/50 hover:border-accent/30 p-6 transition-colors block"
                 >
                   <div className="flex items-center gap-2 mb-3">
                     <span className="text-2xl" dangerouslySetInnerHTML={{ __html: type.icon }} />
-                    {!type.available && (
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted bg-surface-light border border-border/50 rounded-full px-2 py-0.5">
-                        Coming soon
-                      </span>
-                    )}
                   </div>
                   <h3 className="font-semibold mb-1.5">{type.name}</h3>
                   <p className="text-sm text-muted leading-relaxed">
                     {type.desc}
                   </p>
-                </div>
+                </a>
               ))}
 
               {/* Roadmap placeholder */}
