@@ -18,7 +18,7 @@ export default function ScoreGauge({
     score >= 70 ? "#4ade80" : score >= 40 ? "#facc15" : "#f87171";
 
   return (
-    <div className="relative inline-flex items-center justify-center">
+    <div className="relative inline-flex items-center justify-center" role="meter" aria-valuenow={score} aria-valuemin={0} aria-valuemax={100} aria-label={`Overall score: ${score} out of 100`}>
       <svg width={size} height={size} className="-rotate-90">
         <circle
           cx={size / 2}

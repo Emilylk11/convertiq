@@ -6,7 +6,10 @@ import DashboardNav from "@/components/DashboardNav";
 import SupportButton from "@/components/SupportButton";
 import FunnelAuditForm from "@/components/FunnelAuditForm";
 
-export const metadata = { title: "Full Funnel Audit — ConvertIQ" };
+export const metadata = {
+  title: "Full Funnel Audit — ConvertIQ",
+  description: "AI-powered full funnel analysis from ad to checkout — identify conversion leaks at every stage.",
+};
 
 export default async function FunnelAuditPage() {
   const supabase = await createClient();
