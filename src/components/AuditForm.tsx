@@ -39,7 +39,7 @@ const INDUSTRIES = [
   { value: "other", label: "Other" },
 ];
 
-export default function AuditForm() {
+export default function AuditForm({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
   const router = useRouter();
   const [url, setUrl] = useState("");
   const [email, setEmail] = useState("");
@@ -148,25 +148,27 @@ export default function AuditForm() {
         />
       </div>
 
-      <div>
-        <label
-          htmlFor="email"
-          className="block text-sm font-medium text-muted mb-1.5"
-        >
-          Email address
-        </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@company.com"
-          disabled={loading}
-          className="w-full rounded-xl border border-border bg-background px-4 py-3.5 text-foreground placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all disabled:opacity-50"
-        />
-      </div>
+      {!isLoggedIn && (
+        <div>
+          <label
+            htmlFor="email"
+            className="block text-sm font-medium text-muted mb-1.5"
+          >
+            Email address
+          </label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@company.com"
+            disabled={loading}
+            className="w-full rounded-xl border border-border bg-background px-4 py-3.5 text-foreground placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all disabled:opacity-50"
+          />
+        </div>
+      )}
 
       {/* Context toggle */}
       <div>
@@ -307,13 +309,15 @@ export default function AuditForm() {
             {step}
           </span>
         ) : (
-          "Get Your Free Audit →"
+          isLoggedIn ? "Run Audit (1 Credit) →" : "Get Your Free Audit →"
         )}
       </button>
 
-      <p className="text-center text-xs text-muted/60 mt-3">
-        No spam. No credit card. Just actionable insights.
-      </p>
+      {!isLoggedIn && (
+        <p className="text-center text-xs text-muted/60 mt-3">
+          No spam. No credit card. Just actionable insights.
+        </p>
+      )}
 
       <OutOfCreditsModal
         open={showCreditsModal}
