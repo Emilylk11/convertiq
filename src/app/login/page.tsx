@@ -34,7 +34,7 @@ export default function LoginPage() {
               Welcome to ConvertIQ
             </h1>
             <p className="text-sm text-muted">
-              Sign in to your account or create a new one — just enter your email.
+              Sign in with your email and password, Google, or a magic link.
             </p>
           </div>
 
@@ -44,8 +44,7 @@ export default function LoginPage() {
 
           <div className="mt-8">
             <p className="text-center text-xs text-muted/60">
-              New here? Your account is created automatically on first sign-in.
-              No password needed.
+              New here? Create an account with email and password, or sign in with Google.
             </p>
           </div>
         </div>

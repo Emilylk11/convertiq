@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 
 function getSupabase() {
@@ -11,9 +11,16 @@ function getSupabase() {
   );
 }
 
+type Mode = "signin" | "signup" | "magic-link";
+type Status = "idle" | "loading" | "sent" | "error" | "google-loading" | "confirmed";
+
 export default function LoginForm() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "loading" | "sent" | "error" | "google-loading">("idle");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [mode, setMode] = useState<Mode>("signin");
+  const [status, setStatus] = useState<Status>("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/dashboard";
@@ -21,7 +28,7 @@ export default function LoginForm() {
   const [ref, setRef] = useState(paramRef);
   const authError = searchParams.get("error");
 
-  // Also check sessionStorage for referral code (set by ReferralCapture on homepage)
+  // Check sessionStorage for referral code
   useState(() => {
     if (!paramRef && typeof window !== "undefined") {
       const stored = sessionStorage.getItem("convertiq_ref");
@@ -46,14 +53,83 @@ export default function LoginForm() {
         setErrorMsg(error.message);
         setStatus("error");
       }
-      // If no error, browser redirects to Google
     } catch {
       setErrorMsg("Failed to connect to Google. Please try again.");
       setStatus("error");
     }
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handlePasswordSignIn(e: React.FormEvent) {
+    e.preventDefault();
+    setStatus("loading");
+    setErrorMsg("");
+
+    try {
+      const supabase = getSupabase();
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        if (error.message.includes("Invalid login credentials")) {
+          setErrorMsg("Invalid email or password. Try again or use a magic link.");
+        } else if (error.message.includes("Email not confirmed")) {
+          setErrorMsg("Please confirm your email first. Check your inbox for the confirmation link.");
+        } else {
+          setErrorMsg(error.message);
+        }
+        setStatus("error");
+        return;
+      }
+
+      router.push(redirect);
+    } catch {
+      setErrorMsg("Network error. Please try again.");
+      setStatus("error");
+    }
+  }
+
+  async function handleSignUp(e: React.FormEvent) {
+    e.preventDefault();
+    setStatus("loading");
+    setErrorMsg("");
+
+    if (password.length < 6) {
+      setErrorMsg("Password must be at least 6 characters.");
+      setStatus("error");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setErrorMsg("Passwords don't match.");
+      setStatus("error");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, ref }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setErrorMsg(data.error || "Something went wrong");
+        setStatus("error");
+        return;
+      }
+
+      setStatus("confirmed");
+    } catch {
+      setErrorMsg("Network error. Please try again.");
+      setStatus("error");
+    }
+  }
+
+  async function handleMagicLink(e: React.FormEvent) {
     e.preventDefault();
     setStatus("loading");
     setErrorMsg("");
@@ -80,6 +156,31 @@ export default function LoginForm() {
     }
   }
 
+  // Confirmation sent after signup
+  if (status === "confirmed") {
+    return (
+      <div className="rounded-2xl border border-accent/30 bg-accent/5 p-6 text-center">
+        <div className="text-3xl mb-3">✉️</div>
+        <h2 className="text-lg font-semibold mb-2">Confirm your email</h2>
+        <p className="text-sm text-muted leading-relaxed">
+          We sent a confirmation link to{" "}
+          <span className="font-medium text-foreground">{email}</span>.
+          Click the link to activate your account and sign in.
+        </p>
+        <button
+          onClick={() => {
+            setStatus("idle");
+            setMode("signin");
+          }}
+          className="mt-4 text-xs text-accent-bright hover:underline"
+        >
+          Back to sign in
+        </button>
+      </div>
+    );
+  }
+
+  // Magic link sent
   if (status === "sent") {
     return (
       <div className="rounded-2xl border border-accent/30 bg-accent/5 p-6 text-center">
@@ -93,15 +194,20 @@ export default function LoginForm() {
         <button
           onClick={() => {
             setStatus("idle");
+            setMode("signin");
             setEmail("");
           }}
           className="mt-4 text-xs text-accent-bright hover:underline"
         >
-          Use a different email
+          Back to sign in
         </button>
       </div>
     );
   }
+
+  const isLoading = status === "loading" || status === "google-loading";
+  const inputClass =
+    "w-full rounded-xl border border-border bg-surface/50 px-4 py-3 text-sm text-foreground placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all disabled:opacity-50 disabled:cursor-not-allowed";
 
   return (
     <div className="space-y-5">
@@ -117,8 +223,8 @@ export default function LoginForm() {
       <button
         type="button"
         onClick={handleGoogleSignIn}
-        disabled={status === "google-loading" || status === "loading"}
-        className="w-full flex items-center justify-center gap-3 rounded-xl border border-border bg-surface/50 px-6 py-3 text-sm font-medium text-foreground hover:bg-surface hover:border-border/80 transition-all disabled:opacity-50"
+        disabled={isLoading}
+        className="w-full flex items-center justify-center gap-3 rounded-xl border border-border bg-surface/50 px-6 py-3 text-sm font-medium text-foreground hover:bg-surface hover:border-border/80 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {status === "google-loading" ? (
           <svg className="animate-spin h-5 w-5 text-muted" viewBox="0 0 24 24" fill="none">
@@ -132,7 +238,7 @@ export default function LoginForm() {
             <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
           </svg>
         )}
-        {status === "google-loading" ? "Connecting to Google…" : "Continue with Google"}
+        {status === "google-loading" ? "Connecting to Google..." : "Continue with Google"}
       </button>
 
       {/* Divider */}
@@ -142,36 +248,215 @@ export default function LoginForm() {
         <span className="flex-1 h-px bg-border/50" />
       </div>
 
-      {/* Email form */}
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium mb-1.5">
-            Email address
-          </label>
-          <input
-            id="email"
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@company.com"
-            className="w-full rounded-xl border border-border bg-surface/50 px-4 py-3 text-sm text-foreground placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
-            disabled={status === "loading" || status === "google-loading"}
-          />
-        </div>
+      {/* Sign In with Password */}
+      {mode === "signin" && (
+        <form onSubmit={handlePasswordSignIn} className="space-y-4">
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium mb-1.5">
+              Email address
+            </label>
+            <input
+              id="email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@company.com"
+              disabled={isLoading}
+              className={inputClass}
+            />
+          </div>
 
-        {errorMsg && (
-          <p className="text-sm text-red-400">{errorMsg}</p>
-        )}
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium mb-1.5">
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Your password"
+              disabled={isLoading}
+              className={inputClass}
+            />
+          </div>
 
-        <button
-          type="submit"
-          disabled={status === "loading" || status === "google-loading"}
-          className="w-full rounded-xl bg-gradient-to-r from-accent to-accent-dim px-6 py-3 text-sm font-semibold text-white hover:opacity-90 transition-opacity disabled:opacity-50"
-        >
-          {status === "loading" ? "Sending login link…" : "Continue with Email"}
-        </button>
-      </form>
+          {errorMsg && (
+            <p className="text-sm text-red-400">{errorMsg}</p>
+          )}
+
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full rounded-xl bg-gradient-to-r from-accent to-accent-dim px-6 py-3 text-sm font-semibold text-white hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {status === "loading" ? "Signing in..." : "Sign In"}
+          </button>
+
+          <div className="flex items-center justify-between text-xs">
+            <button
+              type="button"
+              onClick={() => {
+                setMode("magic-link");
+                setErrorMsg("");
+                setStatus("idle");
+              }}
+              className="text-accent-bright hover:underline"
+            >
+              Forgot password? Use magic link
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMode("signup");
+                setErrorMsg("");
+                setStatus("idle");
+                setPassword("");
+              }}
+              className="text-accent-bright hover:underline"
+            >
+              Create account
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* Sign Up with Password */}
+      {mode === "signup" && (
+        <form onSubmit={handleSignUp} className="space-y-4">
+          <div>
+            <label htmlFor="signup-email" className="block text-sm font-medium mb-1.5">
+              Email address
+            </label>
+            <input
+              id="signup-email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@company.com"
+              disabled={isLoading}
+              className={inputClass}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="signup-password" className="block text-sm font-medium mb-1.5">
+              Password
+            </label>
+            <input
+              id="signup-password"
+              type="password"
+              required
+              minLength={6}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="At least 6 characters"
+              disabled={isLoading}
+              className={inputClass}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="confirm-password" className="block text-sm font-medium mb-1.5">
+              Confirm password
+            </label>
+            <input
+              id="confirm-password"
+              type="password"
+              required
+              minLength={6}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Repeat your password"
+              disabled={isLoading}
+              className={inputClass}
+            />
+          </div>
+
+          {errorMsg && (
+            <p className="text-sm text-red-400">{errorMsg}</p>
+          )}
+
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full rounded-xl bg-gradient-to-r from-accent to-accent-dim px-6 py-3 text-sm font-semibold text-white hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {status === "loading" ? "Creating account..." : "Create Account"}
+          </button>
+
+          <p className="text-xs text-center">
+            <span className="text-muted">Already have an account? </span>
+            <button
+              type="button"
+              onClick={() => {
+                setMode("signin");
+                setErrorMsg("");
+                setStatus("idle");
+                setPassword("");
+                setConfirmPassword("");
+              }}
+              className="text-accent-bright hover:underline"
+            >
+              Sign in
+            </button>
+          </p>
+        </form>
+      )}
+
+      {/* Magic Link (fallback / forgot password) */}
+      {mode === "magic-link" && (
+        <form onSubmit={handleMagicLink} className="space-y-4">
+          <div>
+            <label htmlFor="magic-email" className="block text-sm font-medium mb-1.5">
+              Email address
+            </label>
+            <input
+              id="magic-email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@company.com"
+              disabled={isLoading}
+              className={inputClass}
+            />
+          </div>
+
+          <p className="text-xs text-muted">
+            We&apos;ll send a sign-in link to your email. No password needed.
+          </p>
+
+          {errorMsg && (
+            <p className="text-sm text-red-400">{errorMsg}</p>
+          )}
+
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full rounded-xl bg-gradient-to-r from-accent to-accent-dim px-6 py-3 text-sm font-semibold text-white hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {status === "loading" ? "Sending link..." : "Send Magic Link"}
+          </button>
+
+          <p className="text-xs text-center">
+            <button
+              type="button"
+              onClick={() => {
+                setMode("signin");
+                setErrorMsg("");
+                setStatus("idle");
+              }}
+              className="text-accent-bright hover:underline"
+            >
+              Back to password sign in
+            </button>
+          </p>
+        </form>
+      )}
     </div>
   );
 }
