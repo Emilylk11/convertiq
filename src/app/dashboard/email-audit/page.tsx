@@ -6,7 +6,10 @@ import DashboardNav from "@/components/DashboardNav";
 import SupportButton from "@/components/SupportButton";
 import EmailAuditForm from "@/components/EmailAuditForm";
 
-export const metadata = { title: "Email Audit — ConvertIQ" };
+export const metadata = {
+  title: "Email Audit — ConvertIQ",
+  description: "AI-powered email sequence analysis for subject lines, CTAs, flow, and deliverability.",
+};
 
 export default async function EmailAuditPage() {
   const supabase = await createClient();

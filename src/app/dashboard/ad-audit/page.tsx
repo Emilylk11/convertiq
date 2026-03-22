@@ -6,7 +6,10 @@ import DashboardNav from "@/components/DashboardNav";
 import SupportButton from "@/components/SupportButton";
 import AdCopyAuditForm from "@/components/AdCopyAuditForm";
 
-export const metadata = { title: "Ad Copy Audit — ConvertIQ" };
+export const metadata = {
+  title: "Ad Copy Audit — ConvertIQ",
+  description: "AI-powered ad copy analysis for hook strength, offer clarity, and CTA effectiveness.",
+};
 
 export default async function AdAuditPage() {
   const supabase = await createClient();

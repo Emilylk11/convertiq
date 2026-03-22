@@ -22,19 +22,19 @@ function statusIcon(status: string) {
   switch (status) {
     case "completed":
       return (
-        <span className="inline-flex h-2 w-2 rounded-full bg-green-400" title="Completed" />
+        <span className="inline-flex h-2 w-2 rounded-full bg-green-400" title="Completed" role="status" aria-label="Completed" />
       );
     case "processing":
       return (
-        <span className="inline-flex h-2 w-2 rounded-full bg-yellow-400 animate-pulse" title="Processing" />
+        <span className="inline-flex h-2 w-2 rounded-full bg-yellow-400 animate-pulse" title="Processing" role="status" aria-label="Processing" />
       );
     case "pending":
       return (
-        <span className="inline-flex h-2 w-2 rounded-full bg-blue-400 animate-pulse" title="Pending" />
+        <span className="inline-flex h-2 w-2 rounded-full bg-blue-400 animate-pulse" title="Pending" role="status" aria-label="Pending" />
       );
     case "failed":
       return (
-        <span className="inline-flex h-2 w-2 rounded-full bg-red-400" title="Failed" />
+        <span className="inline-flex h-2 w-2 rounded-full bg-red-400" title="Failed" role="status" aria-label="Failed" />
       );
     default:
       return null;

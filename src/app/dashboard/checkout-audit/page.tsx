@@ -6,7 +6,10 @@ import DashboardNav from "@/components/DashboardNav";
 import SupportButton from "@/components/SupportButton";
 import CheckoutAuditForm from "@/components/CheckoutAuditForm";
 
-export const metadata = { title: "Checkout Flow Audit — ConvertIQ" };
+export const metadata = {
+  title: "Checkout Flow Audit — ConvertIQ",
+  description: "AI-powered checkout analysis for friction points, trust signals, and payment UX.",
+};
 
 export default async function CheckoutAuditPage() {
   const supabase = await createClient();
