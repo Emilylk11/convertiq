@@ -38,6 +38,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Limit URL stages to 3 max to avoid serverless timeout
+    const urlStageCount = stages.filter((s: { type: string }) => s.type === "url").length;
+    if (urlStageCount > 3) {
+      return NextResponse.json(
+        { error: "Maximum 3 URL stages allowed. Use \"Paste Text\" for additional stages to avoid timeouts." },
+        { status: 400 }
+      );
+    }
+
     const admin = createAdminClient();
     const { data: audit, error: insertError } = await admin
       .from("audits")

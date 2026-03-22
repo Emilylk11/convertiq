@@ -30,9 +30,13 @@ export default function FunnelAuditForm({ isLoggedIn }: { isLoggedIn: boolean })
     setStages(updated);
   };
 
+  const urlStageCount = stages.filter((s) => s.type === "url").length;
+
   const addStage = () => {
     if (stages.length >= 5) return;
-    setStages([...stages, { stageName: `Stage ${stages.length + 1}`, type: "url", content: "" }]);
+    // Default new stages to "text" if already at 3 URL stages
+    const defaultType = urlStageCount >= 3 ? "text" : "url";
+    setStages([...stages, { stageName: `Stage ${stages.length + 1}`, type: defaultType, content: "" }]);
   };
 
   const removeStage = (index: number) => {
@@ -89,6 +93,7 @@ export default function FunnelAuditForm({ isLoggedIn }: { isLoggedIn: boolean })
         <span className="text-amber-400 text-sm">⚡</span>
         <p className="text-xs text-amber-400/80">
           Full funnel audits cost <span className="font-semibold text-amber-400">2 credits</span> because they analyze multiple pages.
+          Max 3 URL stages — use &quot;Paste Text&quot; for others.
         </p>
       </div>
 
@@ -110,11 +115,19 @@ export default function FunnelAuditForm({ isLoggedIn }: { isLoggedIn: boolean })
             <div className="flex items-center gap-2">
               <select
                 value={stage.type}
-                onChange={(e) => updateStage(i, "type", e.target.value as "url" | "text")}
+                onChange={(e) => {
+                  const newType = e.target.value as "url" | "text";
+                  if (newType === "url" && stage.type !== "url" && urlStageCount >= 3) {
+                    setError("Maximum 3 URL stages. Use \"Paste Text\" for additional stages.");
+                    return;
+                  }
+                  setError("");
+                  updateStage(i, "type", newType);
+                }}
                 disabled={loading}
                 className="rounded-lg border border-border/50 bg-background px-2 py-1 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <option value="url">URL</option>
+                <option value="url" disabled={stage.type !== "url" && urlStageCount >= 3}>URL</option>
                 <option value="text">Paste Text</option>
               </select>
               {stages.length > 2 && (
