@@ -9,12 +9,21 @@ export const maxDuration = 120; // seconds (requires Vercel Pro for >60s)
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = await authenticateAndRateLimit(request, {
-      maxRequests: 3,
-      creditCost: 2,
-      requireAuth: true,
-      requirePaid: true,
-    });
+    let auth;
+    try {
+      auth = await authenticateAndRateLimit(request, {
+        maxRequests: 3,
+        creditCost: 2,
+        requireAuth: true,
+        requirePaid: true,
+      });
+    } catch (authError) {
+      console.error("Funnel auth/credit error:", authError instanceof Error ? authError.message : authError);
+      return NextResponse.json(
+        { error: authError instanceof Error ? authError.message : "Authentication failed. Please try again." },
+        { status: 500 }
+      );
+    }
     if (!auth.ok) return auth.response;
     const { context } = auth;
 
