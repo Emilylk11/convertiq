@@ -20,11 +20,15 @@ export default function DashboardNav({ tier, balance, email, activePage }: Dashb
     <nav className="border-b border-border/50 bg-background/80 backdrop-blur-xl sticky top-0 z-10">
       <div className="mx-auto max-w-6xl flex items-center justify-between px-4 sm:px-6 h-16">
         <div className="flex items-center gap-6">
+          {activePage !== "dashboard" && (
+            <a href="/dashboard" className="text-muted hover:text-foreground transition-colors" title="Back to Dashboard">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M12 4l-6 6 6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </a>
+          )}
           <Logo href="/dashboard" size="small" />
           <div className="hidden md:flex items-center gap-5 text-sm">
-            <a href="/dashboard" className={linkClass("dashboard")}>
-              Dashboard
-            </a>
             <a href="/dashboard/new-audit" className={linkClass("run-audit")}>
               Run Audit
             </a>
