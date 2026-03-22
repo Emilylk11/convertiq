@@ -5,8 +5,8 @@ import { authenticateAndRateLimit } from "@/lib/audit-helpers";
 import { runFunnelAudit } from "@/lib/claude";
 import { scrapeUrl } from "@/lib/scraper";
 
-// Allow up to 60s for the initial response (auth + record creation)
-export const maxDuration = 60;
+// Allow up to 300s for scraping multiple URLs + Claude analysis (Vercel Pro)
+export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
   try {

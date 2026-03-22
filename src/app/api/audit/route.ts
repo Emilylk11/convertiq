@@ -7,6 +7,8 @@ import { getUserTier, hasPriorityProcessing } from "@/lib/tiers";
 import { deductCredit, getCreditBalance } from "@/lib/credits";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
+export const maxDuration = 120;
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
