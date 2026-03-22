@@ -5,6 +5,7 @@ import DashboardMobileNav from "@/components/DashboardMobileNav";
 import ThemeToggle from "@/components/ThemeToggle";
 import SignOutButton from "@/components/SignOutButton";
 import BrandingForm from "@/components/BrandingForm";
+import DeleteAccountButton from "@/components/DeleteAccountButton";
 import { getCreditBalance } from "@/lib/credits";
 import type { Metadata } from "next";
 
@@ -149,6 +150,14 @@ export default async function SettingsPage() {
             </a>
           </div>
         )}
+        {/* Danger zone */}
+        <div className="mt-16 pt-8 border-t border-red-500/10">
+          <h2 className="text-sm font-semibold text-red-400 mb-2">Danger Zone</h2>
+          <p className="text-xs text-muted mb-4">
+            Once you delete your account, all your data (audits, credits, referrals, branding) will be permanently removed. This cannot be undone.
+          </p>
+          <DeleteAccountButton />
+        </div>
       </main>
     </div>
   );

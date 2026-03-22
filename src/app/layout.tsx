@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -60,6 +62,8 @@ export default function RootLayout({
           strategy="beforeInteractive"
         >{`(function(){try{var t=localStorage.getItem("convertiq-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}})()`}</Script>
         {children}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
