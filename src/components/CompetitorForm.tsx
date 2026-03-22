@@ -313,7 +313,7 @@ export default function CompetitorForm() {
           onChange={(e) => setYourUrl(e.target.value)}
           placeholder="https://yoursite.com"
           disabled={loading}
-          className="w-full rounded-xl border border-border bg-background px-4 py-3.5 text-foreground placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all disabled:opacity-50"
+          className="w-full rounded-xl border border-border bg-background px-4 py-3.5 text-foreground placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         />
       </div>
 
@@ -337,7 +337,7 @@ export default function CompetitorForm() {
           onChange={(e) => setCompetitorUrl(e.target.value)}
           placeholder="https://competitor.com"
           disabled={loading}
-          className="w-full rounded-xl border border-border bg-background px-4 py-3.5 text-foreground placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all disabled:opacity-50"
+          className="w-full rounded-xl border border-border bg-background px-4 py-3.5 text-foreground placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         />
       </div>
 

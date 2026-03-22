@@ -87,18 +87,46 @@ export async function scrapeUrl(url: string): Promise<ScrapedPageData> {
     throw new Error("URL not allowed: private or internal addresses cannot be audited");
   }
 
-  const response = await fetch(url, {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (compatible; ConvertIQ/1.0; +https://convertiq.com)",
-      Accept: "text/html,application/xhtml+xml",
-    },
-    signal: AbortSignal.timeout(10000),
-    redirect: "follow",
-  });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (compatible; ConvertIQ/1.0; +https://convertiq.com)",
+        Accept: "text/html,application/xhtml+xml",
+      },
+      signal: AbortSignal.timeout(10000),
+      redirect: "follow",
+    });
+  } catch (err) {
+    if (err instanceof Error) {
+      if (err.name === "TimeoutError" || err.name === "AbortError") {
+        throw new Error("The page took too long to respond (over 10 seconds). Please check the URL and try again.");
+      }
+      if (err.message.includes("ENOTFOUND") || err.message.includes("getaddrinfo")) {
+        throw new Error("Could not find that domain. Please check the URL for typos.");
+      }
+      if (err.message.includes("ECONNREFUSED")) {
+        throw new Error("The server refused the connection. The site may be down.");
+      }
+      if (err.message.includes("certificate") || err.message.includes("SSL")) {
+        throw new Error("SSL certificate error. The site may have an invalid certificate.");
+      }
+    }
+    throw new Error("Could not connect to the URL. Please check it and try again.");
+  }
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch ${url}: ${response.status}`);
+    if (response.status === 404) {
+      throw new Error("Page not found (404). Please check the URL.");
+    }
+    if (response.status === 403) {
+      throw new Error("Access denied (403). The site is blocking our scraper.");
+    }
+    if (response.status >= 500) {
+      throw new Error(`The site returned a server error (${response.status}). It may be down.`);
+    }
+    throw new Error(`Failed to fetch page: HTTP ${response.status}`);
   }
 
   // Check final URL after redirects for SSRF bypass via redirect
