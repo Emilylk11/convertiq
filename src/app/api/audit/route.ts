@@ -208,6 +208,13 @@ export async function POST(request: NextRequest) {
           ? auditError.message
           : "Audit analysis failed";
 
+      console.error("Claude audit error:", {
+        message,
+        status: (auditError as { status?: number })?.status,
+        auditId: audit.id,
+        url: parsedUrl.toString(),
+      });
+
       await supabase
         .from("audits")
         .update({ status: "failed", error_message: message })
