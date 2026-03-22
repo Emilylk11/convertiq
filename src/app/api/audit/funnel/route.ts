@@ -1,58 +1,49 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/server";
-import { getUserTier } from "@/lib/tiers";
-import { deductCredit } from "@/lib/credits";
+import { authenticateAndRateLimit } from "@/lib/audit-helpers";
 import { runFunnelAudit } from "@/lib/claude";
 import { scrapeUrl } from "@/lib/scraper";
-import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    const rateLimitKey = user?.id || request.headers.get("x-forwarded-for") || "anonymous";
-    if (!rateLimit(rateLimitKey, 3, 60000)) {
-      return NextResponse.json({ error: "Too many requests. Please wait a minute." }, { status: 429 });
-    }
+    const auth = await authenticateAndRateLimit(request, {
+      maxRequests: 3,
+      creditCost: 2,
+      requireAuth: true,
+      requirePaid: true,
+    });
+    if (!auth.ok) return auth.response;
+    const { context } = auth;
 
     const body = await request.json();
-    const { stages, context } = body;
+    const { stages, context: auditContext } = body;
 
-    // stages: [{ type: "url" | "text", stageName: string, content: string }]
     if (!stages || !Array.isArray(stages) || stages.length < 2 || stages.length > 5) {
-      return NextResponse.json({ error: "Provide 2-5 funnel stages." }, { status: 400 });
-    }
-
-    // Auth — funnel audit requires login + credits (costs 2 credits)
-    if (!user) {
-      return NextResponse.json({ error: "Please sign in to use funnel audit." }, { status: 401 });
-    }
-
-    const tier = await getUserTier(user.id);
-    if (tier === "free") {
-      return NextResponse.json({ error: "Upgrade to use funnel audit." }, { status: 403 });
-    }
-
-    // Deduct 2 credits for funnel audit
-    const success1 = await deductCredit(user.id);
-    const success2 = await deductCredit(user.id);
-    if (!success1 || !success2) {
-      return NextResponse.json({ error: "Insufficient credits. Funnel audit costs 2 credits." }, { status: 402 });
+      return NextResponse.json(
+        { error: "Provide 2-5 funnel stages." },
+        { status: 400 }
+      );
     }
 
     const admin = createAdminClient();
-    const { data: audit, error: insertError } = await admin.from("audits").insert({
-      url: "funnel-audit",
-      email: user.email || "",
-      audit_type: "full",
-      status: "processing",
-      user_id: user.id,
-      expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
-    }).select("id").single();
+    const { data: audit, error: insertError } = await admin
+      .from("audits")
+      .insert({
+        url: "funnel-audit",
+        email: context.user?.email || "",
+        audit_type: "full",
+        status: "processing",
+        user_id: context.userId,
+        expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+      })
+      .select("id")
+      .single();
 
     if (insertError || !audit) {
-      return NextResponse.json({ error: "Failed to create audit record." }, { status: 500 });
+      return NextResponse.json(
+        { error: "Failed to create audit record." },
+        { status: 500 }
+      );
     }
 
     // Process stages — scrape URLs, keep text as-is
@@ -81,20 +72,29 @@ export async function POST(request: NextRequest) {
     }
 
     // Store scraped data
-    await admin.from("audits").update({ scraped_data: { stages: processedStages } }).eq("id", audit.id);
+    await admin
+      .from("audits")
+      .update({ scraped_data: { stages: processedStages } })
+      .eq("id", audit.id);
 
     // Run funnel audit
-    const results = await runFunnelAudit(processedStages, context);
+    const results = await runFunnelAudit(processedStages, auditContext);
 
-    await admin.from("audits").update({
-      status: "completed",
-      results,
-      overall_score: results.overallScore,
-    }).eq("id", audit.id);
+    await admin
+      .from("audits")
+      .update({
+        status: "completed",
+        results,
+        overall_score: results.overallScore,
+      })
+      .eq("id", audit.id);
 
     return NextResponse.json({ auditId: audit.id, results });
   } catch (error) {
     console.error("Funnel audit error:", error);
-    return NextResponse.json({ error: "Audit failed. Please try again." }, { status: 500 });
+    return NextResponse.json(
+      { error: "Audit failed. Please try again." },
+      { status: 500 }
+    );
   }
 }

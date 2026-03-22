@@ -72,8 +72,8 @@ export async function GET(
 
   const record = audit as AuditRecord;
 
-  // 4. Verify ownership — user must own this audit or it must be their free audit
-  if (record.user_id && record.user_id !== userId) {
+  // 4. Verify ownership — user must own this audit
+  if (!record.user_id || record.user_id !== userId) {
     return NextResponse.json(
       { error: "You do not have permission to export this audit" },
       { status: 403 }

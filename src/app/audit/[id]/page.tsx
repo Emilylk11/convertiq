@@ -32,6 +32,27 @@ export default async function AuditPage({
 
   const record = audit as AuditRecord;
 
+  // Check if audit has expired
+  if (record.expires_at && new Date(record.expires_at) < new Date()) {
+    return (
+      <div className="min-h-full bg-background text-foreground flex items-center justify-center">
+        <div className="text-center px-4 py-20">
+          <div className="text-4xl mb-4">&#8987;</div>
+          <h1 className="text-xl sm:text-2xl font-bold mb-2">This audit has expired</h1>
+          <p className="text-muted mb-6 max-w-sm mx-auto text-sm sm:text-base">
+            Audits are stored for 90 days. Run a new audit to get fresh results.
+          </p>
+          <a
+            href="/dashboard/new-audit"
+            className="inline-block rounded-xl bg-gradient-to-r from-accent to-accent-dim px-8 py-3.5 text-base font-semibold text-white hover:opacity-90 transition-opacity"
+          >
+            Run a New Audit
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   // Determine user tier and auth state for feature gating
   let userTier: UserTier = "free";
   let isLoggedIn = false;

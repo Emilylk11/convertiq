@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
-import { scrapeUrl } from "@/lib/scraper";
+import { scrapeUrl, isPrivateUrl } from "@/lib/scraper";
 import { runLandingPageAudit } from "@/lib/claude";
 import { sendAuditEmail, sendLowCreditEmail } from "@/lib/resend";
 import { getUserTier, hasPriorityProcessing } from "@/lib/tiers";
@@ -61,9 +61,10 @@ export async function POST(request: NextRequest) {
       RATE_LIMITS.audit.windowMs
     );
     if (!rl.allowed) {
+      const waitSec = Math.ceil(rl.retryAfterMs / 1000);
       return NextResponse.json(
-        { error: "Too many requests. Please wait a moment before trying again." },
-        { status: 429 }
+        { error: `Too many requests. Please wait ${waitSec} seconds.` },
+        { status: 429, headers: { "Retry-After": String(waitSec) } }
       );
     }
 
@@ -88,12 +89,40 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // Block private/internal URLs
+    if (isPrivateUrl(url)) {
+      return NextResponse.json(
+        { error: "Private or internal URLs cannot be audited. Please enter a public URL." },
+        { status: 400 }
+      );
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
     if (!emailRegex.test(email)) {
       return NextResponse.json(
         { error: "Please enter a valid email address" },
         { status: 400 }
       );
+    }
+
+    // Validate context values if provided
+    if (context) {
+      if (context.monthlyTraffic !== undefined) {
+        if (typeof context.monthlyTraffic !== "number" || context.monthlyTraffic < 0 || context.monthlyTraffic > 100_000_000) {
+          return NextResponse.json(
+            { error: "Monthly traffic must be between 0 and 100,000,000" },
+            { status: 400 }
+          );
+        }
+      }
+      if (context.avgOrderValue !== undefined) {
+        if (typeof context.avgOrderValue !== "number" || context.avgOrderValue < 0 || context.avgOrderValue > 1_000_000) {
+          return NextResponse.json(
+            { error: "Average order value must be between 0 and 1,000,000" },
+            { status: 400 }
+          );
+        }
+      }
     }
 
     const supabase = createAdminClient();

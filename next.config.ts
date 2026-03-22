@@ -23,6 +23,24 @@ try {
   // .env.local may not exist in CI/production
 }
 
+// Validate critical env vars at build/start time
+const REQUIRED_ENV_VARS = [
+  "ANTHROPIC_API_KEY",
+  "NEXT_PUBLIC_SUPABASE_URL",
+  "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+  "SUPABASE_SERVICE_ROLE_KEY",
+];
+
+if (process.env.NODE_ENV === "production") {
+  const missing = REQUIRED_ENV_VARS.filter((v) => !process.env[v]);
+  if (missing.length > 0) {
+    console.error(
+      `\n❌ Missing required environment variables:\n${missing.map((v) => `   - ${v}`).join("\n")}\n`
+    );
+    // Warn but don't crash — Vercel builds may not have all vars at build time
+  }
+}
+
 const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,

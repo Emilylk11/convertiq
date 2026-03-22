@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
+import { scoreColor } from "@/lib/audit-categories";
 import AuditFilters from "./AuditFilters";
 import ScoreTrend from "./ScoreTrend";
 
@@ -15,12 +16,6 @@ interface AuditItem {
 
 interface AuditHistoryClientProps {
   audits: AuditItem[];
-}
-
-function scoreColor(score: number) {
-  if (score >= 70) return "text-green-400";
-  if (score >= 40) return "text-yellow-400";
-  return "text-red-400";
 }
 
 function statusIcon(status: string) {

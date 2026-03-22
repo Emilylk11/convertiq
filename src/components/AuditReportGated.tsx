@@ -1,5 +1,6 @@
-import type { AuditResults, AuditFinding } from "@/lib/types";
+import type { AuditResults } from "@/lib/types";
 import { type UserTier, canViewFullFindings, canReaudit } from "@/lib/tiers";
+import { getCategoryLabel, scoreColor } from "@/lib/audit-categories";
 import ScoreGauge from "./ScoreGauge";
 import FindingCard from "./FindingCard";
 import CopyButton from "./CopyButton";
@@ -9,30 +10,6 @@ import RevenueImpactSection from "./RevenueImpact";
 import CopyRewritesSection from "./CopyRewrites";
 
 const FREE_VISIBLE_COUNT = 2;
-
-const CATEGORIES: AuditFinding["category"][] = [
-  "cta",
-  "copy",
-  "trust",
-  "ux",
-  "speed",
-  "mobile",
-];
-
-const categoryLabels: Record<string, string> = {
-  cta: "CTA",
-  copy: "Copy",
-  trust: "Trust",
-  ux: "UX",
-  speed: "Speed",
-  mobile: "Mobile",
-};
-
-function scoreColor(score: number) {
-  if (score >= 70) return "text-green-400";
-  if (score >= 40) return "text-yellow-400";
-  return "text-red-400";
-}
 
 export default function AuditReportGated({
   results,
@@ -99,19 +76,26 @@ export default function AuditReportGated({
       )}
 
       {/* Category scores */}
-      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3 mb-8">
-        {CATEGORIES.map((cat) => (
-          <div
-            key={cat}
-            className="rounded-xl border border-border/50 bg-surface/50 p-3 sm:p-4 text-center"
-          >
-            <div className={`text-lg sm:text-xl font-bold ${scoreColor(results.categoryScores[cat])}`}>
-              {results.categoryScores[cat]}
-            </div>
-            <div className="text-xs text-muted mt-1 uppercase">{categoryLabels[cat]}</div>
+      {(() => {
+        const cats = Object.keys(results.categoryScores);
+        return (
+          <div className={`grid grid-cols-3 ${cats.length <= 6 ? "sm:grid-cols-6" : "sm:grid-cols-" + cats.length} gap-2 sm:gap-3 mb-8`}>
+            {cats.map((cat) => (
+              <div
+                key={cat}
+                className="rounded-xl border border-border/50 bg-surface/50 p-3 sm:p-4 text-center"
+              >
+                <div className={`text-lg sm:text-xl font-bold ${scoreColor(results.categoryScores[cat])}`}>
+                  {results.categoryScores[cat]}
+                </div>
+                <div className="text-xs text-muted mt-1 uppercase">
+                  {getCategoryLabel(cat)}
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        );
+      })()}
 
       {/* Rewritten headlines */}
       {(results.rewrittenHeadline || results.rewrittenSubheadline) && (

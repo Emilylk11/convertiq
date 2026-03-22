@@ -17,7 +17,7 @@ export interface ScrapedPageData {
 
 export interface AuditFinding {
   id: string;
-  category: "cta" | "copy" | "trust" | "ux" | "speed" | "mobile";
+  category: string;
   severity: "critical" | "warning" | "info";
   title: string;
   description: string;
@@ -25,6 +25,7 @@ export interface AuditFinding {
   impactScore: number;
   rewrittenCopy?: string;
   estimatedConversionLift?: number; // e.g. 2.5 means +2.5% lift if fixed
+  funnelStage?: string;
 }
 
 export interface RevenueImpact {
@@ -56,14 +57,7 @@ export interface AuditResults {
   overallScore: number;
   summary: string;
   findings: AuditFinding[];
-  categoryScores: {
-    cta: number;
-    copy: number;
-    trust: number;
-    ux: number;
-    speed: number;
-    mobile: number;
-  };
+  categoryScores: Record<string, number>;
   rewrittenHeadline?: string;
   rewrittenSubheadline?: string;
   copyRewrites?: CopyRewrite[];

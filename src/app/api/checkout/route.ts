@@ -2,6 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createCheckoutUrl } from "@/lib/lemonsqueezy";
 
+// Whitelist of valid Lemon Squeezy variant IDs
+function getValidVariantIds(): string[] {
+  return [
+    process.env.LEMONSQUEEZY_VARIANT_STARTER,
+    process.env.LEMONSQUEEZY_VARIANT_GROWTH,
+    process.env.LEMONSQUEEZY_VARIANT_AGENCY,
+    process.env.LEMONSQUEEZY_VARIANT_CREDITS_5,
+    process.env.LEMONSQUEEZY_VARIANT_CREDITS_15,
+    process.env.LEMONSQUEEZY_VARIANT_CREDITS_50,
+  ].filter(Boolean) as string[];
+}
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
@@ -21,6 +33,15 @@ export async function POST(request: NextRequest) {
     if (!variantId) {
       return NextResponse.json(
         { error: "Missing variantId" },
+        { status: 400 }
+      );
+    }
+
+    // Validate against known variant IDs
+    const validIds = getValidVariantIds();
+    if (validIds.length > 0 && !validIds.includes(variantId)) {
+      return NextResponse.json(
+        { error: "Invalid product variant" },
         { status: 400 }
       );
     }

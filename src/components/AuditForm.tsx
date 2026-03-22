@@ -144,7 +144,7 @@ export default function AuditForm({ isLoggedIn = false }: { isLoggedIn?: boolean
           onChange={(e) => setUrl(e.target.value)}
           placeholder="https://yoursite.com"
           disabled={loading}
-          className="w-full rounded-xl border border-border bg-background px-4 py-3.5 text-foreground placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all disabled:opacity-50"
+          className="w-full rounded-xl border border-border bg-background px-4 py-3.5 text-foreground placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         />
       </div>
 
@@ -165,7 +165,7 @@ export default function AuditForm({ isLoggedIn = false }: { isLoggedIn?: boolean
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@company.com"
             disabled={loading}
-            className="w-full rounded-xl border border-border bg-background px-4 py-3.5 text-foreground placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all disabled:opacity-50"
+            className="w-full rounded-xl border border-border bg-background px-4 py-3.5 text-foreground placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
       )}
@@ -243,7 +243,7 @@ export default function AuditForm({ isLoggedIn = false }: { isLoggedIn?: boolean
                 onChange={(e) => setAudience(e.target.value)}
                 placeholder="e.g. Women 25-45, small business owners, developers"
                 disabled={loading}
-                className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all disabled:opacity-50"
+                className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
 
@@ -267,7 +267,7 @@ export default function AuditForm({ isLoggedIn = false }: { isLoggedIn?: boolean
                     onChange={(e) => setMonthlyTraffic(e.target.value)}
                     placeholder="e.g. 10000"
                     disabled={loading}
-                    className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all disabled:opacity-50"
+                    className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                 </div>
                 <div>
@@ -283,7 +283,7 @@ export default function AuditForm({ isLoggedIn = false }: { isLoggedIn?: boolean
                     onChange={(e) => setAvgOrderValue(e.target.value)}
                     placeholder="e.g. 50"
                     disabled={loading}
-                    className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all disabled:opacity-50"
+                    className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>

@@ -81,8 +81,8 @@ export async function POST(
     "url" | "email" | "audit_type"
   > & { user_id: string | null };
 
-  // Verify the user owns this audit (or it's a free/anonymous audit they created by email)
-  if (record.user_id && record.user_id !== userId) {
+  // Verify the user owns this audit
+  if (!record.user_id || record.user_id !== userId) {
     return NextResponse.json(
       { error: "You do not have permission to re-audit this report" },
       { status: 403 }

@@ -10,18 +10,13 @@ import OnboardingBanner from "@/components/OnboardingBanner";
 import LowCreditWarning from "@/components/LowCreditWarning";
 import AuditHistoryClient from "@/components/AuditHistoryClient";
 import ReferralPanel from "@/components/ReferralPanel";
+import { scoreColor } from "@/lib/audit-categories";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Dashboard — ConvertIQ",
   description: "Your audit history and credit balance.",
 };
-
-function scoreColor(score: number) {
-  if (score >= 70) return "text-green-400";
-  if (score >= 40) return "text-yellow-400";
-  return "text-red-400";
-}
 
 function tierBadge(tier: UserTier) {
   const styles: Record<UserTier, { bg: string; text: string; label: string }> = {

@@ -7,6 +7,7 @@ import {
   Font,
 } from "@react-pdf/renderer";
 import type { AuditResults } from "@/lib/types";
+import { getCategoryLabel, scoreColorHex } from "@/lib/audit-categories";
 
 Font.registerHyphenationCallback((word) => [word]);
 
@@ -234,22 +235,7 @@ const styles = StyleSheet.create({
   },
 });
 
-const CATEGORIES = ["cta", "copy", "trust", "ux", "speed", "mobile"] as const;
-
-const categoryLabels: Record<string, string> = {
-  cta: "CTA",
-  copy: "Copy",
-  trust: "Trust",
-  ux: "UX",
-  speed: "Speed",
-  mobile: "Mobile",
-};
-
-function scoreColor(score: number) {
-  if (score >= 70) return "#16a34a";
-  if (score >= 40) return "#d97706";
-  return "#dc2626";
-}
+// scoreColor and categoryLabels imported from @/lib/audit-categories
 
 function impactColor(impact: number) {
   if (impact >= 7) return "#dc2626";
@@ -309,7 +295,7 @@ export default function AuditPdf({
             <Text
               style={{
                 ...styles.scoreBig,
-                color: scoreColor(results.overallScore),
+                color: scoreColorHex(results.overallScore),
               }}
             >
               {results.overallScore}
@@ -323,18 +309,18 @@ export default function AuditPdf({
 
         {/* Category scores */}
         <View style={styles.categoryRow}>
-          {CATEGORIES.map((cat) => (
+          {Object.keys(results.categoryScores).map((cat) => (
             <View key={cat} style={styles.categoryBox}>
               <Text
                 style={{
                   ...styles.categoryScore,
-                  color: scoreColor(results.categoryScores[cat]),
+                  color: scoreColorHex(results.categoryScores[cat]),
                 }}
               >
                 {results.categoryScores[cat]}
               </Text>
               <Text style={styles.categoryName}>
-                {categoryLabels[cat]}
+                {getCategoryLabel(cat)}
               </Text>
             </View>
           ))}
@@ -411,7 +397,7 @@ export default function AuditPdf({
             </View>
             <View style={styles.colCategory}>
               <Text style={styles.cellText}>
-                {categoryLabels[finding.category] || finding.category}
+                {getCategoryLabel(finding.category)}
               </Text>
             </View>
             <View style={styles.colTitle}>
