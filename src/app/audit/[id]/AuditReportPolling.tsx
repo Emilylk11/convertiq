@@ -5,13 +5,17 @@ import { useEffect, useState } from "react";
 import AuditReportSkeleton from "@/components/AuditReportSkeleton";
 
 const POLL_INTERVAL_MS = 3000;
-const TIMEOUT_MS = 120000; // 2 minutes
+const TIMEOUT_MS = 300000; // 5 minutes — generous for funnel audits
 
 const STEPS = [
-  { label: "Connecting to your page...", duration: 0 },
-  { label: "Scraping content and structure...", duration: 3000 },
-  { label: "Analysing with AI...", duration: 8000 },
-  { label: "Building your report...", duration: 20000 },
+  { label: "Connecting to your pages...", duration: 0 },
+  { label: "Scraping page content...", duration: 4000 },
+  { label: "Analyzing structure and CTAs...", duration: 12000 },
+  { label: "Running AI conversion analysis...", duration: 25000 },
+  { label: "Evaluating copy and trust signals...", duration: 50000 },
+  { label: "Generating recommendations...", duration: 80000 },
+  { label: "Building your report...", duration: 110000 },
+  { label: "Almost done — finalizing scores...", duration: 140000 },
 ];
 
 export default function AuditReportPolling({ auditId }: { auditId: string }) {
@@ -48,10 +52,9 @@ export default function AuditReportPolling({ auditId }: { auditId: string }) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center px-4">
         <div className="text-4xl mb-4">⏳</div>
-        <h2 className="text-xl font-bold mb-2">Taking longer than usual</h2>
+        <h2 className="text-xl font-bold mb-2">Still working on it</h2>
         <p className="text-muted text-sm mb-6 max-w-sm">
-          Your audit is still running. Complex pages can take up to 2 minutes.
-          Try refreshing in a moment.
+          Multi-page audits can take up to 5 minutes. Your report is still being generated — try refreshing in a moment.
         </p>
         <button
           onClick={() => window.location.reload()}
