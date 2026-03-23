@@ -31,7 +31,7 @@ const TESTIMONIAL_SIGNALS = [
   "rating",
 ];
 
-const MAX_TEXT_LENGTH = 8000;
+const MAX_TEXT_LENGTH = 5000; // Reduced from 8000 — faster Claude processing, still enough for thorough analysis
 const MAX_RESPONSE_SIZE = 5 * 1024 * 1024; // 5MB limit
 
 // Block private/internal IPs to prevent SSRF attacks
