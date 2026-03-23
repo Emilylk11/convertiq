@@ -12,6 +12,7 @@ export const CATEGORY_SHORT_LABELS: Record<string, string> = {
   ux: "UX",
   speed: "Speed",
   mobile: "Mobile",
+  design: "Design",
   // Checkout
   friction: "Friction",
   pricing: "Pricing",
@@ -46,6 +47,7 @@ export const CATEGORY_FULL_LABELS: Record<string, string> = {
   ux: "User Experience",
   speed: "Page Speed",
   mobile: "Mobile Experience",
+  design: "Visual Design & Layout",
   // Checkout
   friction: "Friction Points",
   pricing: "Pricing Transparency",
@@ -80,6 +82,7 @@ export const CATEGORY_ICONS: Record<string, string> = {
   ux: "🧭",
   speed: "⚡",
   mobile: "📱",
+  design: "🎨",
   // Checkout
   friction: "🚧",
   pricing: "💲",
