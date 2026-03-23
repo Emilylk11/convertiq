@@ -21,7 +21,8 @@ const CLAUDE_TIMEOUT_MS = 120_000; // 120 second timeout for Claude API calls
 
 export async function runLandingPageAudit(
   scrapedData: ScrapedPageData,
-  context?: AuditContext
+  context?: AuditContext,
+  screenshot?: string | null
 ): Promise<AuditResults> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -31,6 +32,26 @@ export async function runLandingPageAudit(
   }
   const anthropic = new Anthropic({ apiKey, timeout: CLAUDE_TIMEOUT_MS });
 
+  // Build message content — with or without screenshot
+  const textContent = buildAuditUserMessage(scrapedData, context);
+  type ContentBlock =
+    | { type: "image"; source: { type: "base64"; media_type: "image/jpeg"; data: string } }
+    | { type: "text"; text: string };
+
+  const userContent: string | ContentBlock[] = screenshot
+    ? [
+        {
+          type: "image" as const,
+          source: {
+            type: "base64" as const,
+            media_type: "image/jpeg" as const,
+            data: screenshot,
+          },
+        },
+        { type: "text" as const, text: textContent },
+      ]
+    : textContent;
+
   const message = await anthropic.messages.create({
     model: "claude-sonnet-4-6",
     max_tokens: 8000,
@@ -38,7 +59,7 @@ export async function runLandingPageAudit(
     messages: [
       {
         role: "user",
-        content: buildAuditUserMessage(scrapedData, context),
+        content: userContent,
       },
     ],
   });

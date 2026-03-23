@@ -10,7 +10,7 @@ You MUST respond with valid JSON matching this exact schema — no markdown, no 
   "findings": [
     {
       "id": "<unique string>",
-      "category": "<cta|copy|trust|ux|speed|mobile>",
+      "category": "<cta|copy|trust|ux|speed|mobile|design>",
       "severity": "<critical|warning|info>",
       "title": "<short finding title>",
       "description": "<what the issue is and why it hurts conversions>",
@@ -26,7 +26,8 @@ You MUST respond with valid JSON matching this exact schema — no markdown, no 
     "trust": <number 0-100>,
     "ux": <number 0-100>,
     "speed": <number 0-100>,
-    "mobile": <number 0-100>
+    "mobile": <number 0-100>,
+    "design": <number 0-100>
   },
   "rewrittenHeadline": "<a conversion-optimized headline rewrite — ALWAYS provide this>",
   "rewrittenSubheadline": "<a conversion-optimized subheadline rewrite — ALWAYS provide this>",
@@ -95,7 +96,18 @@ Rules:
 - For each finding, suggest a concrete fix — not generic advice
 - For estimatedConversionLift: estimate the realistic percentage point improvement in conversion rate if this single issue is fixed. Critical issues typically cause 1-5% lift, warnings 0.3-2%, info 0.1-0.5%. Be realistic and conservative — the total across all findings should not exceed 8-15% combined.
 - Score harshly but fairly — most pages score 30-70
-- Categories: cta (calls to action), copy (headlines, body text, value props), trust (social proof, testimonials, badges), ux (layout, navigation, friction), speed (perceived performance), mobile (mobile-specific issues)
+- Categories: cta (calls to action), copy (headlines, body text, value props), trust (social proof, testimonials, badges), ux (layout, navigation, friction), speed (perceived performance), mobile (mobile-specific issues), design (visual design, layout quality, color usage, visual hierarchy)
+
+VISUAL DESIGN ANALYSIS — if a screenshot of the page is provided as an image, you MUST analyze the visual design and include "design" findings and a "design" category score. Evaluate:
+- VISUAL HIERARCHY: Is the most important content (headline, CTA) visually dominant? Does the eye flow naturally from top to bottom? Is there a clear focal point?
+- COLOR & CONTRAST: Are colors used effectively? Is there enough contrast between text and background? Do CTA buttons stand out visually? Is the color palette cohesive and professional?
+- WHITESPACE & LAYOUT: Is there breathing room between sections? Does the layout feel cluttered or clean? Are elements properly aligned?
+- TYPOGRAPHY: Are fonts readable? Is there a clear font hierarchy (headings vs body)? Is line spacing appropriate?
+- IMAGERY & GRAPHICS: Are images high quality? Do they support the message? Are there stock photos that feel generic or inauthentic?
+- PROFESSIONALISM: Does the page look like it was designed by a professional or does it feel amateurish? Does it match the brand's price point and target audience?
+- CTA BUTTON DESIGN: Are buttons visually prominent? Do they have appropriate size, color, and spacing? Can visitors instantly identify where to click?
+- OVERALL AESTHETIC: Is the design modern, clean, and trustworthy? Or does it look outdated, cluttered, or cheap?
+If no screenshot is provided, still include the "design" category but base it only on what you can infer from the scraped HTML structure (headings, image counts, form counts, etc.) and note in findings that a full visual analysis was not possible.
 - Severity: critical (major conversion killer), warning (notable issue), info (nice-to-have improvement)
 
 CONTEXT-AWARE ANALYSIS — if the user provides context about their traffic, industry, or audience, you MUST factor it into every recommendation AND every copy rewrite:

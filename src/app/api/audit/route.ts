@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { scrapeUrl, isPrivateUrl } from "@/lib/scraper";
+import { captureScreenshot } from "@/lib/screenshot";
 import { runLandingPageAudit } from "@/lib/claude";
 import { sendAuditEmail, sendLowCreditEmail } from "@/lib/resend";
 import { getUserTier, hasPriorityProcessing } from "@/lib/tiers";
@@ -163,10 +164,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Scrape the URL
+    // Scrape the URL and capture screenshot in parallel
     let scrapedData;
+    let screenshot: string | null = null;
     try {
-      scrapedData = await scrapeUrl(parsedUrl.toString());
+      const [scrapeResult, screenshotResult] = await Promise.all([
+        scrapeUrl(parsedUrl.toString()),
+        captureScreenshot(parsedUrl.toString()).catch(() => null),
+      ]);
+      scrapedData = scrapeResult;
+      screenshot = screenshotResult;
 
       await supabase
         .from("audits")
@@ -189,10 +196,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Run Claude audit
+    // Run Claude audit with scraped data + optional screenshot for visual analysis
     let results;
     try {
-      results = await runLandingPageAudit(scrapedData, context);
+      results = await runLandingPageAudit(scrapedData, context, screenshot);
 
       await supabase
         .from("audits")
