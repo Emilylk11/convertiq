@@ -3,7 +3,7 @@
  * Returns base64-encoded PNG or null on failure (graceful degradation).
  */
 
-const SCREENSHOT_TIMEOUT_MS = 15_000;
+const SCREENSHOT_TIMEOUT_MS = 10_000;
 
 export async function captureScreenshot(url: string): Promise<string | null> {
   const accessKey = process.env.SCREENSHOTONE_ACCESS_KEY;
@@ -17,14 +17,14 @@ export async function captureScreenshot(url: string): Promise<string | null> {
       access_key: accessKey,
       url,
       format: "jpg",
-      quality: "80",
+      quality: "50",
       viewport_width: "1280",
       viewport_height: "800",
+      image_width: "640",
       block_cookie_banners: "true",
       block_chats: "true",
       full_page: "false",
-      image_quality: "80",
-      timeout: "10",
+      timeout: "8",
     });
 
     const apiUrl = `https://api.screenshotone.com/take?${params.toString()}`;
