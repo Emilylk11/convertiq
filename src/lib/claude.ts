@@ -17,7 +17,7 @@ export interface AuditContext {
   avgOrderValue?: number;
 }
 
-const CLAUDE_TIMEOUT_MS = 120_000; // 120 second timeout for Claude API calls
+const CLAUDE_TIMEOUT_MS = 240_000; // 240 second timeout — single attempt, no retries
 
 export async function runLandingPageAudit(
   scrapedData: ScrapedPageData,
@@ -30,7 +30,7 @@ export async function runLandingPageAudit(
       "ANTHROPIC_API_KEY is not set. Check your .env.local file."
     );
   }
-  const anthropic = new Anthropic({ apiKey, timeout: CLAUDE_TIMEOUT_MS });
+  const anthropic = new Anthropic({ apiKey, timeout: CLAUDE_TIMEOUT_MS, maxRetries: 0 });
 
   // Build message content — with or without screenshot
   const textContent = buildAuditUserMessage(scrapedData, context);
@@ -105,7 +105,7 @@ async function runTextAudit(
 ): Promise<AuditResults> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY is not set.");
-  const anthropic = new Anthropic({ apiKey, timeout: CLAUDE_TIMEOUT_MS });
+  const anthropic = new Anthropic({ apiKey, timeout: CLAUDE_TIMEOUT_MS, maxRetries: 0 });
 
   const message = await anthropic.messages.create({
     model: "claude-sonnet-4-6",
