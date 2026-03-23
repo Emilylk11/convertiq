@@ -3,7 +3,7 @@ import { authenticateAndRateLimit, createAndRunAudit } from "@/lib/audit-helpers
 import { runCheckoutAudit } from "@/lib/claude";
 import { scrapeUrl, isPrivateUrl } from "@/lib/scraper";
 
-export const maxDuration = 120;
+export const maxDuration = 300; // 5 minutes — Vercel Pro supports up to 300s
 
 export async function POST(request: NextRequest) {
   try {

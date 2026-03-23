@@ -7,7 +7,7 @@ import { getUserTier, hasPriorityProcessing } from "@/lib/tiers";
 import { deductCredit, getCreditBalance } from "@/lib/credits";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
-export const maxDuration = 120;
+export const maxDuration = 300; // 5 minutes — Vercel Pro supports up to 300s
 
 export async function POST(request: NextRequest) {
   try {
