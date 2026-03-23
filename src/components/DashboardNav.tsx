@@ -1,5 +1,5 @@
 import ThemeToggle from "./ThemeToggle";
-import SignOutButton from "./SignOutButton";
+import UserDropdown from "./UserDropdown";
 import DashboardMobileNav from "./DashboardMobileNav";
 
 interface DashboardNavProps {
@@ -44,10 +44,9 @@ export default function DashboardNav({ tier, balance, email, activePage }: Dashb
             {balance} credit{balance !== 1 ? "s" : ""}
           </span>
           <ThemeToggle />
-          <span className="hidden sm:inline text-xs text-muted truncate max-w-[120px]" title={email}>
-            {email}
+          <span className="hidden sm:inline">
+            <UserDropdown email={email} />
           </span>
-          <SignOutButton />
           <DashboardMobileNav tier={tier} />
         </div>
       </div>
