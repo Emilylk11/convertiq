@@ -1,5 +1,5 @@
 import type { AuditResults } from "@/lib/types";
-import { type UserTier, canViewFullFindings, canReaudit } from "@/lib/tiers";
+import { type UserTier, canViewFullFindings, canReaudit, canExportPdf } from "@/lib/tiers";
 import { getCategoryLabel, scoreColor } from "@/lib/audit-categories";
 import ScoreGauge from "./ScoreGauge";
 import FindingCard from "./FindingCard";
@@ -24,6 +24,7 @@ export default function AuditReportGated({
 }) {
   const hasFullAccess = canViewFullFindings(userTier);
   const showReaudit = canReaudit(userTier);
+  const showPdfExport = canExportPdf(userTier);
 
   const visibleFindings = hasFullAccess
     ? results.findings
@@ -49,6 +50,30 @@ export default function AuditReportGated({
 
       {/* Action bar */}
       <div className="flex flex-wrap items-center justify-center gap-2 mb-8">
+        {showPdfExport ? (
+          <a
+            href={`/api/audit/${auditId}/pdf`}
+            className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium bg-surface border border-border/50 text-muted hover:text-foreground hover:border-border transition-all"
+            download
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+              <path d="M8 1v9m0 0L5 7m3 3 3-3M2 12v2h12v-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Download PDF
+          </a>
+        ) : (
+          <a
+            href="/pricing"
+            className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium bg-surface border border-border/50 text-muted hover:text-foreground hover:border-border transition-all"
+            title="Upgrade to unlock PDF export"
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+              <rect x="5" y="1" width="6" height="9" rx="3" stroke="currentColor" strokeWidth="1.5" />
+              <rect x="3" y="7" width="10" height="8" rx="2" stroke="currentColor" strokeWidth="1.5" />
+            </svg>
+            PDF Export — Upgrade
+          </a>
+        )}
         <ShareButton auditId={auditId} />
         {showReaudit ? (
           <ReAuditButton auditId={auditId} />
@@ -62,7 +87,7 @@ export default function AuditReportGated({
               <rect x="5" y="1" width="6" height="9" rx="3" stroke="currentColor" strokeWidth="1.5" />
               <rect x="3" y="7" width="10" height="8" rx="2" stroke="currentColor" strokeWidth="1.5" />
             </svg>
-            Re-audit — Upgrade to unlock
+            Re-audit — Upgrade
           </a>
         )}
       </div>
