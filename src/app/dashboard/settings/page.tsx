@@ -96,14 +96,14 @@ export default async function SettingsPage() {
         {/* Custom Branding — Agency only */}
         {showBranding ? (
           <div>
-            <h2 className="text-lg font-semibold mb-4">Custom Branding</h2>
+            <h2 id="branding" className="text-lg font-semibold mb-4 scroll-mt-24">Custom Branding</h2>
             <p className="text-sm text-muted mb-6">
               Customize how your PDF audit reports look when you share them with clients. Your branding will appear on the header and footer of every exported PDF.
             </p>
             <BrandingForm />
           </div>
         ) : (
-          <div className="rounded-2xl border border-dashed border-border/50 p-8 text-center">
+          <div id="branding" className="rounded-2xl border border-dashed border-border/50 p-8 text-center scroll-mt-24">
             <div className="text-3xl mb-3">&#127912;</div>
             <h3 className="text-sm font-semibold mb-2">Custom Branding</h3>
             <p className="text-xs text-muted mb-4 max-w-sm mx-auto">
