@@ -87,6 +87,27 @@ export async function scrapeUrl(url: string): Promise<ScrapedPageData> {
     throw new Error("URL not allowed: private or internal addresses cannot be audited");
   }
 
+  // DNS rebinding protection: resolve hostname and check IP before fetching
+  try {
+    const { hostname } = new URL(url);
+    const dns = await import("dns").then((m) => m.promises);
+    const addresses = await dns.resolve4(hostname).catch(() => []);
+    const privateIpRanges = [
+      /^127\./, /^10\./, /^172\.(1[6-9]|2[0-9]|3[01])\./, /^192\.168\./,
+      /^169\.254\./, /^0\./, /^100\.(6[4-9]|[7-9]\d|1[0-2]\d)\./, // CGNAT
+    ];
+    for (const ip of addresses) {
+      if (privateIpRanges.some((r) => r.test(ip))) {
+        throw new Error("URL resolves to a private IP address — request blocked");
+      }
+    }
+  } catch (dnsErr) {
+    if (dnsErr instanceof Error && dnsErr.message.includes("private IP")) {
+      throw dnsErr;
+    }
+    // DNS resolution failures will be caught by the fetch below
+  }
+
   let response: Response;
   try {
     response = await fetch(url, {

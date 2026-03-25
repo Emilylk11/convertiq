@@ -19,6 +19,16 @@ export default async function AuditPage({
 }) {
   const { id } = await params;
 
+  // First check if the current user owns this audit
+  let currentUserId: string | null = null;
+  try {
+    const authClient = await createClient();
+    const { data: { user } } = await authClient.auth.getUser();
+    currentUserId = user?.id ?? null;
+  } catch {
+    // Not logged in
+  }
+
   const supabase = createAdminClient();
   const { data: audit } = await supabase
     .from("audits")
@@ -31,6 +41,12 @@ export default async function AuditPage({
   }
 
   const record = audit as AuditRecord;
+
+  // SECURITY: Only allow access if the user owns this audit, or if the audit
+  // was created by a guest (no user_id) — guest audits are shared via URL
+  if (record.user_id && record.user_id !== currentUserId) {
+    notFound(); // Return 404 instead of 403 to avoid leaking audit existence
+  }
 
   // Detect stuck audits — if "processing" for more than 5 minutes, mark as failed
   if (record.status === "processing") {
