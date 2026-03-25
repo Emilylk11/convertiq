@@ -113,14 +113,14 @@ async function fetchRenderedHtml(url: string): Promise<string | null> {
       format: "html",
       block_cookie_banners: "true",
       block_chats: "true",
-      delay: "3",               // Wait 3 seconds for JS to render
-      timeout: "15",            // Max 15 seconds
+      delay: "1",               // Wait 1 second for JS to render (most SPAs hydrate in <500ms)
+      timeout: "10",            // Max 10 seconds
       block_ads: "true",
     });
 
     const apiUrl = `https://api.screenshotone.com/take?${params.toString()}`;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 20_000);
+    const timeoutId = setTimeout(() => controller.abort(), 15_000);
 
     const response = await fetch(apiUrl, { signal: controller.signal });
     clearTimeout(timeoutId);
