@@ -6,10 +6,11 @@ interface DashboardNavProps {
   tier: string;
   balance: number;
   email: string;
+  displayName?: string;
   activePage?: "dashboard" | "run-audit" | "buy-credits" | "competitors" | "bulk-audit" | "settings";
 }
 
-export default function DashboardNav({ tier, balance, email, activePage }: DashboardNavProps) {
+export default function DashboardNav({ tier, balance, email, displayName, activePage }: DashboardNavProps) {
   const linkClass = (page: string) =>
     activePage === page
       ? "text-foreground font-medium transition-colors"
@@ -45,7 +46,7 @@ export default function DashboardNav({ tier, balance, email, activePage }: Dashb
           </span>
           <ThemeToggle />
           <span className="hidden sm:inline">
-            <UserDropdown email={email} />
+            <UserDropdown email={email} displayName={displayName} />
           </span>
           <DashboardMobileNav tier={tier} />
         </div>

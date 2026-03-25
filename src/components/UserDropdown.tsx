@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function UserDropdown({ email }: { email: string }) {
+export default function UserDropdown({ email, displayName }: { email: string; displayName?: string }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -46,9 +46,9 @@ export default function UserDropdown({ email }: { email: string }) {
       >
         {/* Avatar circle */}
         <span className="h-6 w-6 rounded-full bg-accent/20 border border-accent/30 flex items-center justify-center text-[10px] font-semibold text-accent-bright uppercase shrink-0">
-          {email.charAt(0)}
+          {(displayName || email).charAt(0)}
         </span>
-        <span className="hidden sm:inline truncate max-w-[120px]">{email}</span>
+        <span className="hidden sm:inline truncate max-w-[120px]">{displayName || email}</span>
         {/* Chevron */}
         <svg
           width="12"
