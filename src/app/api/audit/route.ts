@@ -12,6 +12,15 @@ export const maxDuration = 300; // 5 minutes — Vercel Pro supports up to 300s
 
 export async function POST(request: NextRequest) {
   try {
+    // Limit request body size (16KB should be plenty for audit requests)
+    const contentLength = request.headers.get("content-length");
+    if (contentLength && parseInt(contentLength, 10) > 16384) {
+      return NextResponse.json(
+        { error: "Request too large" },
+        { status: 413 }
+      );
+    }
+
     const body = await request.json();
     const { url, email, context } = body as {
       url?: string;
@@ -113,7 +122,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate context values if provided
+    // Validate and sanitize context values if provided
     if (context) {
       if (context.monthlyTraffic !== undefined) {
         if (typeof context.monthlyTraffic !== "number" || context.monthlyTraffic < 0 || context.monthlyTraffic > 100_000_000) {
@@ -130,6 +139,17 @@ export async function POST(request: NextRequest) {
             { status: 400 }
           );
         }
+      }
+      // Sanitize text fields — strip HTML and limit length
+      const MAX_CONTEXT_LEN = 500;
+      if (context.trafficType) {
+        context.trafficType = context.trafficType.replace(/<[^>]*>/g, "").slice(0, MAX_CONTEXT_LEN);
+      }
+      if (context.industry) {
+        context.industry = context.industry.replace(/<[^>]*>/g, "").slice(0, MAX_CONTEXT_LEN);
+      }
+      if (context.audience) {
+        context.audience = context.audience.replace(/<[^>]*>/g, "").slice(0, MAX_CONTEXT_LEN);
       }
     }
 

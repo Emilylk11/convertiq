@@ -15,8 +15,10 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient();
 
-    // Where to send the user after they click the magic link
-    const next = redirect || "/dashboard";
+    // SECURITY: Validate redirect to prevent open redirect attacks
+    const next = redirect && redirect.startsWith("/") && !redirect.startsWith("//")
+      ? redirect
+      : "/dashboard";
 
     const { error } = await supabase.auth.signInWithOtp({
       email,

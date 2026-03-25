@@ -85,7 +85,16 @@ export function verifyWebhookSignature(
   payload: string,
   signature: string
 ): boolean {
+  if (!signature || !LEMONSQUEEZY_WEBHOOK_SECRET) {
+    return false;
+  }
   const hmac = crypto.createHmac("sha256", LEMONSQUEEZY_WEBHOOK_SECRET);
   const digest = hmac.update(payload).digest("hex");
-  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(digest));
+  const sigBuf = Buffer.from(signature);
+  const digestBuf = Buffer.from(digest);
+  // timingSafeEqual throws if lengths differ — check first
+  if (sigBuf.length !== digestBuf.length) {
+    return false;
+  }
+  return crypto.timingSafeEqual(sigBuf, digestBuf);
 }
