@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import MobileNav from "@/components/MobileNav";
 import ThemeToggle from "@/components/ThemeToggle";
 import FaqAccordion from "./FaqAccordion";
+import { buildFaqPageSchema } from "@/lib/schema";
 
 export const metadata: Metadata = {
   title: "FAQ — ConvertIQ",
@@ -114,8 +115,16 @@ const FAQ_SECTIONS = [
 ];
 
 export default function FaqPage() {
+  // Flatten all FAQ items for schema markup
+  const allFaqs = FAQ_SECTIONS.flatMap((section) => section.items);
+
   return (
     <div className="min-h-full bg-background text-foreground">
+      {/* FAQ Schema for Google rich results */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: buildFaqPageSchema(allFaqs) }}
+      />
       {/* Nav */}
       <nav className="border-b border-border/50 bg-background/80 backdrop-blur-xl sticky top-0 z-10">
         <div className="mx-auto max-w-6xl flex items-center justify-between px-4 sm:px-6 h-16">

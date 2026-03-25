@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { sampleAudits } from "@/lib/sampleAudits";
 import ScoreGauge from "@/components/ScoreGauge";
 import FindingCard from "@/components/FindingCard";
@@ -5,6 +6,17 @@ import CopyButton from "@/components/CopyButton";
 import MobileNav from "@/components/MobileNav";
 import ThemeToggle from "@/components/ThemeToggle";
 import { getCategoryLabel, scoreColor } from "@/lib/audit-categories";
+
+export const metadata: Metadata = {
+  title: "Example Audit Reports",
+  description:
+    "See real ConvertIQ audit reports in action. Browse sample conversion audits with scores, findings, and AI-generated copy rewrites for landing pages, e-commerce, and SaaS sites.",
+  openGraph: {
+    title: "Example Audit Reports — ConvertIQ",
+    description:
+      "See what a ConvertIQ conversion audit looks like. Real reports with scores, findings, and actionable fixes.",
+  },
+};
 
 export default function ExamplesPage() {
   return (

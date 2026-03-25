@@ -3,6 +3,7 @@ import Script from "next/script";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { OrganizationSchema, SoftwareApplicationSchema } from "@/lib/schema";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -69,6 +70,9 @@ export default function RootLayout({
           id="theme-init"
           strategy="beforeInteractive"
         >{`(function(){try{var t=localStorage.getItem("convertiq-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}})()`}</Script>
+        {/* JSON-LD Structured Data for SEO */}
+        <OrganizationSchema />
+        <SoftwareApplicationSchema />
         {children}
         <Analytics />
         <SpeedInsights />
