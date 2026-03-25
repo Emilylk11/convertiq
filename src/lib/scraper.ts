@@ -34,6 +34,19 @@ const TESTIMONIAL_SIGNALS = [
 const MAX_TEXT_LENGTH = 5000; // Reduced from 8000 — faster Claude processing, still enough for thorough analysis
 const MAX_RESPONSE_SIZE = 5 * 1024 * 1024; // 5MB limit
 
+// SPA detection signals — if we see these with very little content, it's a JS-rendered app
+const SPA_SIGNALS = [
+  '<div id="root"',       // Create React App
+  '<div id="app"',        // Vue CLI
+  '<div id="__next"',     // Next.js (rare to be empty, but possible)
+  '<div id="__nuxt"',     // Nuxt.js
+  "You need to enable JavaScript",
+  "This app works best with JavaScript enabled",
+  "Please enable JavaScript",
+];
+
+const SPA_MIN_WORD_THRESHOLD = 50; // If page has fewer words than this, check for SPA
+
 // Block private/internal IPs to prevent SSRF attacks
 export function isPrivateUrl(urlString: string): boolean {
   try {
@@ -79,6 +92,179 @@ export function isPrivateUrl(urlString: string): boolean {
   } catch {
     return true; // Block malformed URLs
   }
+}
+
+/**
+ * Fetches the rendered HTML of a URL using ScreenshotOne's format=html.
+ * This executes JavaScript and returns the full DOM — essential for SPAs.
+ * Returns null on failure (graceful degradation to static HTML).
+ */
+async function fetchRenderedHtml(url: string): Promise<string | null> {
+  const accessKey = process.env.SCREENSHOTONE_ACCESS_KEY;
+  if (!accessKey) {
+    console.warn("SCREENSHOTONE_ACCESS_KEY not set — cannot render SPA content");
+    return null;
+  }
+
+  try {
+    const params = new URLSearchParams({
+      access_key: accessKey,
+      url,
+      format: "html",
+      block_cookie_banners: "true",
+      block_chats: "true",
+      delay: "3",               // Wait 3 seconds for JS to render
+      timeout: "15",            // Max 15 seconds
+      block_ads: "true",
+    });
+
+    const apiUrl = `https://api.screenshotone.com/take?${params.toString()}`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20_000);
+
+    const response = await fetch(apiUrl, { signal: controller.signal });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      console.warn(`Rendered HTML API returned ${response.status} for ${url}`);
+      return null;
+    }
+
+    const html = await response.text();
+
+    // Sanity check — rendered HTML should have more content
+    if (html.length < 500) {
+      console.warn("Rendered HTML too short — likely a rendering failure");
+      return null;
+    }
+
+    return html;
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      console.warn(`Rendered HTML fetch timed out for ${url}`);
+    } else {
+      console.warn(`Rendered HTML fetch failed for ${url}:`, error);
+    }
+    return null;
+  }
+}
+
+/**
+ * Checks if static HTML looks like a JavaScript SPA with no server-rendered content.
+ */
+function detectSpa(html: string, wordCount: number): boolean {
+  if (wordCount > SPA_MIN_WORD_THRESHOLD) return false;
+
+  const htmlLower = html.toLowerCase();
+  return SPA_SIGNALS.some((signal) => htmlLower.includes(signal.toLowerCase()));
+}
+
+/**
+ * Parses HTML (static or rendered) into structured page data using Cheerio.
+ */
+function parseHtml(html: string, url: string): ScrapedPageData {
+  const $ = cheerio.load(html);
+
+  // Remove scripts and styles from text extraction
+  $("script, style, noscript").remove();
+
+  const baseUrl = new URL(url);
+
+  // Extract headings
+  const headings: ScrapedPageData["headings"] = [];
+  $("h1, h2, h3, h4, h5, h6").each((_, el) => {
+    const level = parseInt(el.tagName.replace("h", ""), 10);
+    const text = $(el).text().trim();
+    if (text) headings.push({ level, text });
+  });
+
+  // Extract CTAs (buttons and action links)
+  const ctas: ScrapedPageData["ctas"] = [];
+  $("button, a[href], [role='button'], input[type='submit']").each((_, el) => {
+    const text = $(el).text().trim().toLowerCase();
+    const href = $(el).attr("href") || "";
+    const isCta = CTA_KEYWORDS.some((kw) => text.includes(kw));
+    const isButton =
+      el.tagName === "button" ||
+      $(el).attr("role") === "button" ||
+      $(el).attr("type") === "submit";
+
+    if (isCta || isButton) {
+      ctas.push({
+        text: $(el).text().trim(),
+        href,
+        type: isButton ? "button" : "link",
+      });
+    }
+  });
+
+  // Extract images
+  const images: ScrapedPageData["images"] = [];
+  $("img").each((_, el) => {
+    const src = $(el).attr("src") || "";
+    const alt = $(el).attr("alt") || "";
+    if (src) images.push({ src, alt });
+  });
+
+  // Extract links
+  const links: ScrapedPageData["links"] = [];
+  $("a[href]").each((_, el) => {
+    const href = $(el).attr("href") || "";
+    const text = $(el).text().trim();
+    if (!href || href.startsWith("#") || href.startsWith("javascript:"))
+      return;
+    let isExternal = false;
+    try {
+      const linkUrl = new URL(href, url);
+      isExternal = linkUrl.hostname !== baseUrl.hostname;
+    } catch {
+      // skip malformed URLs
+    }
+    if (text) links.push({ text, href, isExternal });
+  });
+
+  // Body text content
+  let textContent = $("body").text().replace(/\s+/g, " ").trim();
+  const wordCount = textContent.split(/\s+/).filter(Boolean).length;
+  if (textContent.length > MAX_TEXT_LENGTH) {
+    textContent = textContent.slice(0, MAX_TEXT_LENGTH) + "...";
+  }
+
+  // Detect testimonials
+  const pageHtml = $.html().toLowerCase();
+  const hasTestimonials =
+    TESTIMONIAL_SIGNALS.some(
+      (signal) =>
+        pageHtml.includes(`class="${signal}`) ||
+        pageHtml.includes(`id="${signal}`) ||
+        pageHtml.includes(signal)
+    ) || $("blockquote").length > 0;
+
+  // Detect pricing
+  const hasPricingSection =
+    pageHtml.includes("pricing") ||
+    pageHtml.includes("price") ||
+    $('[class*="pricing"], [id*="pricing"]').length > 0;
+
+  // Form count
+  const formCount = $("form").length;
+
+  return {
+    url,
+    title: $("title").text().trim(),
+    metaDescription: $('meta[name="description"]').attr("content") || "",
+    metaKeywords: $('meta[name="keywords"]').attr("content") || "",
+    ogImage: $('meta[property="og:image"]').attr("content") || null,
+    headings,
+    ctas,
+    images,
+    links,
+    textContent,
+    formCount,
+    hasTestimonials,
+    hasPricingSection,
+    wordCount,
+  };
 }
 
 export async function scrapeUrl(url: string): Promise<ScrapedPageData> {
@@ -173,106 +359,29 @@ export async function scrapeUrl(url: string): Promise<ScrapedPageData> {
   if (html.length > MAX_RESPONSE_SIZE) {
     throw new Error("Page is too large to audit (over 5MB)");
   }
-  const $ = cheerio.load(html);
 
-  // Remove scripts and styles from text extraction
-  $("script, style, noscript").remove();
+  // Parse the static HTML first
+  let result = parseHtml(html, url);
 
-  const baseUrl = new URL(url);
+  // Detect if this is a JavaScript SPA with no server-rendered content
+  if (detectSpa(html, result.wordCount)) {
+    console.log(`SPA detected for ${url} (${result.wordCount} words) — fetching rendered HTML...`);
 
-  // Extract headings
-  const headings: ScrapedPageData["headings"] = [];
-  $("h1, h2, h3, h4, h5, h6").each((_, el) => {
-    const level = parseInt(el.tagName.replace("h", ""), 10);
-    const text = $(el).text().trim();
-    if (text) headings.push({ level, text });
-  });
+    const renderedHtml = await fetchRenderedHtml(url);
+    if (renderedHtml) {
+      const renderedResult = parseHtml(renderedHtml, url);
 
-  // Extract CTAs (buttons and action links)
-  const ctas: ScrapedPageData["ctas"] = [];
-  $("button, a[href], [role='button'], input[type='submit']").each((_, el) => {
-    const text = $(el).text().trim().toLowerCase();
-    const href = $(el).attr("href") || "";
-    const isCta = CTA_KEYWORDS.some((kw) => text.includes(kw));
-    const isButton =
-      el.tagName === "button" ||
-      $(el).attr("role") === "button" ||
-      $(el).attr("type") === "submit";
-
-    if (isCta || isButton) {
-      ctas.push({
-        text: $(el).text().trim(),
-        href,
-        type: isButton ? "button" : "link",
-      });
+      // Only use rendered version if it actually has more content
+      if (renderedResult.wordCount > result.wordCount) {
+        console.log(`Rendered HTML has ${renderedResult.wordCount} words (up from ${result.wordCount}) — using rendered version`);
+        result = renderedResult;
+        // Mark that we used JS rendering so the audit knows
+        result.textContent = `[JavaScript-rendered page — content extracted after JS execution]\n\n${result.textContent}`;
+      } else {
+        console.log(`Rendered HTML didn't improve content (${renderedResult.wordCount} words) — keeping static version`);
+      }
     }
-  });
-
-  // Extract images
-  const images: ScrapedPageData["images"] = [];
-  $("img").each((_, el) => {
-    const src = $(el).attr("src") || "";
-    const alt = $(el).attr("alt") || "";
-    if (src) images.push({ src, alt });
-  });
-
-  // Extract links
-  const links: ScrapedPageData["links"] = [];
-  $("a[href]").each((_, el) => {
-    const href = $(el).attr("href") || "";
-    const text = $(el).text().trim();
-    if (!href || href.startsWith("#") || href.startsWith("javascript:"))
-      return;
-    let isExternal = false;
-    try {
-      const linkUrl = new URL(href, url);
-      isExternal = linkUrl.hostname !== baseUrl.hostname;
-    } catch {
-      // skip malformed URLs
-    }
-    if (text) links.push({ text, href, isExternal });
-  });
-
-  // Body text content
-  let textContent = $("body").text().replace(/\s+/g, " ").trim();
-  const wordCount = textContent.split(/\s+/).length;
-  if (textContent.length > MAX_TEXT_LENGTH) {
-    textContent = textContent.slice(0, MAX_TEXT_LENGTH) + "...";
   }
 
-  // Detect testimonials
-  const pageHtml = $.html().toLowerCase();
-  const hasTestimonials =
-    TESTIMONIAL_SIGNALS.some(
-      (signal) =>
-        pageHtml.includes(`class="${signal}`) ||
-        pageHtml.includes(`id="${signal}`) ||
-        pageHtml.includes(signal)
-    ) || $("blockquote").length > 0;
-
-  // Detect pricing
-  const hasPricingSection =
-    pageHtml.includes("pricing") ||
-    pageHtml.includes("price") ||
-    $('[class*="pricing"], [id*="pricing"]').length > 0;
-
-  // Form count
-  const formCount = $("form").length;
-
-  return {
-    url,
-    title: $("title").text().trim(),
-    metaDescription: $('meta[name="description"]').attr("content") || "",
-    metaKeywords: $('meta[name="keywords"]').attr("content") || "",
-    ogImage: $('meta[property="og:image"]').attr("content") || null,
-    headings,
-    ctas,
-    images,
-    links,
-    textContent,
-    formCount,
-    hasTestimonials,
-    hasPricingSection,
-    wordCount,
-  };
+  return result;
 }
