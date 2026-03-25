@@ -91,6 +91,7 @@ export default async function AuditPage({
   let userTier: UserTier = "free";
   let isLoggedIn = false;
   let userEmail = "";
+  let userDisplayName: string | undefined;
   let balance = 0;
 
   try {
@@ -99,6 +100,7 @@ export default async function AuditPage({
     if (user) {
       isLoggedIn = true;
       userEmail = user.email || "";
+      userDisplayName = user.user_metadata?.display_name;
       const [tier, bal] = await Promise.all([
         getUserTier(user.id),
         getCreditBalance(user.id).catch(() => 0),
@@ -116,7 +118,7 @@ export default async function AuditPage({
     <div className="min-h-full bg-background text-foreground">
       {/* Nav — logged-in vs logged-out */}
       {isLoggedIn ? (
-        <DashboardNav tier={userTier} balance={balance} email={userEmail} />
+        <DashboardNav tier={userTier} balance={balance} email={userEmail} displayName={userDisplayName} />
       ) : (
         <nav className="border-b border-border/50 bg-background/80 backdrop-blur-xl sticky top-0 z-10">
           <div className="mx-auto max-w-4xl flex items-center justify-between px-4 sm:px-6 h-16">

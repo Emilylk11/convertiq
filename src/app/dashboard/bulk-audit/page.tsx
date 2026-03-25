@@ -33,7 +33,7 @@ export default async function BulkAuditPage() {
 
   return (
     <div className="min-h-full bg-background text-foreground">
-      <DashboardNav tier={tier} balance={balance} email={user.email ?? ""} activePage="bulk-audit" />
+      <DashboardNav tier={tier} balance={balance} email={user.email ?? ""} displayName={user.user_metadata?.display_name} activePage="bulk-audit" />
 
       <main className="mx-auto max-w-3xl px-4 sm:px-6 py-10 sm:py-16">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">Bulk Audit</h1>

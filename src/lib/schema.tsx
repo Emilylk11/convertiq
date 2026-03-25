@@ -124,3 +124,52 @@ export function buildBreadcrumbSchema(items: { name: string; url: string }[]) {
     })),
   });
 }
+
+export function buildComparisonPageSchema({
+  title,
+  description,
+  url,
+  faqs,
+}: {
+  title: string;
+  description: string;
+  url: string;
+  faqs: { q: string; a: string }[];
+}) {
+  const schemas = [
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      name: title,
+      description,
+      url: url.startsWith("http") ? url : `${APP_URL}${url}`,
+      publisher: { "@type": "Organization", name: "ConvertIQ", url: APP_URL },
+    },
+  ];
+  if (faqs.length > 0) {
+    schemas.push(JSON.parse(buildFaqPageSchema(faqs)));
+  }
+  return JSON.stringify(schemas);
+}
+
+export function buildFreeToolSchema({
+  name,
+  description,
+  url,
+}: {
+  name: string;
+  description: string;
+  url: string;
+}) {
+  return JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    name,
+    description,
+    url: url.startsWith("http") ? url : `${APP_URL}${url}`,
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web",
+    offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+    publisher: { "@type": "Organization", name: "ConvertIQ", url: APP_URL },
+  });
+}

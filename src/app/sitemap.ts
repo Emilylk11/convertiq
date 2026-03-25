@@ -1,5 +1,8 @@
 import type { MetadataRoute } from "next";
 import { BLOG_POSTS } from "./blog/posts";
+import { COMPETITORS } from "@/data/competitors";
+import { FREE_TOOLS } from "@/data/free-tools";
+import { SERVICES } from "@/data/services";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://convert-iqs.com";
@@ -9,6 +12,34 @@ export default function sitemap(): MetadataRoute.Sitemap {
     lastModified: new Date(post.date),
     changeFrequency: "monthly" as const,
     priority: 0.7,
+  }));
+
+  const comparePages: MetadataRoute.Sitemap = COMPETITORS.map((c) => ({
+    url: `${baseUrl}/compare/convertiq-vs-${c.slug}`,
+    lastModified: new Date(),
+    changeFrequency: "monthly" as const,
+    priority: 0.8,
+  }));
+
+  const alternativesPages: MetadataRoute.Sitemap = COMPETITORS.map((c) => ({
+    url: `${baseUrl}/alternatives/${c.slug}-alternatives`,
+    lastModified: new Date(),
+    changeFrequency: "monthly" as const,
+    priority: 0.7,
+  }));
+
+  const freeToolPages: MetadataRoute.Sitemap = FREE_TOOLS.map((t) => ({
+    url: `${baseUrl}/free/${t.slug}`,
+    lastModified: new Date(),
+    changeFrequency: "monthly" as const,
+    priority: 0.9,
+  }));
+
+  const servicePages: MetadataRoute.Sitemap = SERVICES.map((s) => ({
+    url: `${baseUrl}/services/${s.slug}`,
+    lastModified: new Date(),
+    changeFrequency: "monthly" as const,
+    priority: 0.8,
   }));
 
   return [
@@ -67,5 +98,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     ...blogPages,
+    ...comparePages,
+    ...alternativesPages,
+    ...freeToolPages,
+    ...servicePages,
   ];
 }

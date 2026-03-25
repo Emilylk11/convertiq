@@ -33,6 +33,7 @@ export default async function NewAuditPage() {
         tier={tier}
         balance={balance}
         email={user.email ?? ""}
+        displayName={user.user_metadata?.display_name}
         activePage="run-audit"
       />
 

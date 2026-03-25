@@ -111,6 +111,7 @@ export default async function DashboardPage({
         tier={tier}
         balance={balance}
         email={user.email ?? ""}
+        displayName={user.user_metadata?.display_name}
         activePage="dashboard"
       />
 

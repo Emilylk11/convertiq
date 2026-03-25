@@ -3,6 +3,7 @@ import { getUserTier } from "@/lib/tiers";
 import { redirect } from "next/navigation";
 import DashboardNav from "@/components/DashboardNav";
 import BrandingForm from "@/components/BrandingForm";
+import ProfileForm from "@/components/ProfileForm";
 import DeleteAccountButton from "@/components/DeleteAccountButton";
 import { getCreditBalance } from "@/lib/credits";
 import type { Metadata } from "next";
@@ -32,7 +33,7 @@ export default async function SettingsPage() {
 
   return (
     <div className="min-h-full bg-background text-foreground">
-      <DashboardNav tier={tier} balance={balance} email={user.email ?? ""} activePage="settings" />
+      <DashboardNav tier={tier} balance={balance} email={user.email ?? ""} displayName={user.user_metadata?.display_name} activePage="settings" />
 
       <main className="mx-auto max-w-2xl px-4 sm:px-6 py-10 sm:py-16">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">Settings</h1>
@@ -55,6 +56,15 @@ export default async function SettingsPage() {
               <span className="font-medium">{balance}</span>
             </div>
           </div>
+        </div>
+
+        {/* Profile */}
+        <div className="rounded-2xl border border-border/50 bg-surface/30 p-6 mb-8">
+          <h2 className="text-sm font-semibold mb-4">Profile</h2>
+          <ProfileForm
+            initialDisplayName={user.user_metadata?.display_name || ""}
+            initialCompanyName={user.user_metadata?.company_name || ""}
+          />
         </div>
 
         {/* Priority Processing badge for Growth+ */}
