@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { BLOG_POSTS } from "../posts";
 import ThemeToggle from "@/components/ThemeToggle";
 import MobileNav from "@/components/MobileNav";
+import { buildArticleSchema, buildBreadcrumbSchema } from "@/lib/schema";
 
 export async function generateStaticParams() {
   return BLOG_POSTS.map((post) => ({ slug: post.slug }));
@@ -17,6 +18,8 @@ export async function generateMetadata({
   const post = BLOG_POSTS.find((p) => p.slug === slug);
   if (!post) return { title: "Post Not Found" };
 
+  const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://convert-iqs.com";
+
   return {
     title: post.title,
     description: post.description,
@@ -25,6 +28,10 @@ export async function generateMetadata({
       title: post.title,
       description: post.description,
       publishedTime: post.date,
+      url: `${APP_URL}/blog/${slug}`,
+    },
+    alternates: {
+      canonical: `${APP_URL}/blog/${slug}`,
     },
   };
 }
@@ -46,6 +53,29 @@ export default async function BlogPostPage({
 
   return (
     <div className="min-h-full bg-background text-foreground">
+      {/* JSON-LD structured data — rendered server-side for Google */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: buildArticleSchema({
+            title: post.title,
+            description: post.description,
+            slug: post.slug,
+            datePublished: post.date,
+            readTime: post.readTime,
+          }),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: buildBreadcrumbSchema([
+            { name: "Home", url: "/" },
+            { name: "Blog", url: "/blog" },
+            { name: post.title, url: `/blog/${post.slug}` },
+          ]),
+        }}
+      />
       <nav className="border-b border-border/50 bg-background/80 backdrop-blur-xl sticky top-0 z-10">
         <div className="mx-auto max-w-6xl flex items-center justify-between px-4 sm:px-6 h-16">
           <a href="/" className="flex items-center gap-2">
