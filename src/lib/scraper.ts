@@ -162,8 +162,14 @@ function detectSpa(html: string, wordCount: number): boolean {
 /**
  * Parses HTML (static or rendered) into structured page data using Cheerio.
  */
+function stripSurrogates(str: string): string {
+  return str
+    .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g, "")
+    .replace(/(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, "");
+}
+
 function parseHtml(html: string, url: string): ScrapedPageData {
-  const $ = cheerio.load(html);
+  const $ = cheerio.load(stripSurrogates(html));
 
   // Remove scripts and styles from text extraction
   $("script, style, noscript").remove();
