@@ -162,14 +162,29 @@ function detectSpa(html: string, wordCount: number): boolean {
 /**
  * Parses HTML (static or rendered) into structured page data using Cheerio.
  */
-function stripSurrogates(str: string): string {
-  return str
-    .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g, "")
-    .replace(/(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, "");
+/**
+ * Remove characters that produce invalid JSON when serialized.
+ * Strips unpaired UTF-16 surrogates, null bytes, and other control chars
+ * that cause Anthropic API "no low surrogate" 400 errors.
+ */
+function sanitizeForJson(str: string): string {
+  // eslint-disable-next-line no-control-regex
+  let cleaned = str.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "");
+  // Remove any lone surrogates by encoding to UTF-8 and back
+  // This forces replacement of unpaired surrogates with the Unicode replacement char
+  try {
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder("utf-8", { fatal: false });
+    cleaned = decoder.decode(encoder.encode(cleaned));
+  } catch {
+    // Fallback: brute-force strip surrogate range
+    cleaned = cleaned.replace(/[\uD800-\uDFFF]/g, "");
+  }
+  return cleaned;
 }
 
 function parseHtml(html: string, url: string): ScrapedPageData {
-  const $ = cheerio.load(stripSurrogates(html));
+  const $ = cheerio.load(sanitizeForJson(html));
 
   // Remove scripts and styles from text extraction
   $("script, style, noscript").remove();

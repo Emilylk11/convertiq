@@ -20,6 +20,20 @@ export interface AuditContext {
 const CLAUDE_TIMEOUT_MS = 240_000; // 240 second timeout per attempt
 const CLAUDE_MAX_RETRIES = 2; // Retry up to 2 times on transient 500/529 errors
 
+/** Strip characters that break JSON serialization for the Anthropic API */
+function sanitizeText(str: string): string {
+  // eslint-disable-next-line no-control-regex
+  let cleaned = str.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "");
+  try {
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder("utf-8", { fatal: false });
+    cleaned = decoder.decode(encoder.encode(cleaned));
+  } catch {
+    cleaned = cleaned.replace(/[\uD800-\uDFFF]/g, "");
+  }
+  return cleaned;
+}
+
 export async function runLandingPageAudit(
   scrapedData: ScrapedPageData,
   context?: AuditContext,
@@ -33,8 +47,8 @@ export async function runLandingPageAudit(
   }
   const anthropic = new Anthropic({ apiKey, timeout: CLAUDE_TIMEOUT_MS, maxRetries: CLAUDE_MAX_RETRIES });
 
-  // Build message content — with or without screenshot
-  const textContent = buildAuditUserMessage(scrapedData, context);
+  // Build message content — sanitize to prevent JSON serialization errors
+  const textContent = sanitizeText(buildAuditUserMessage(scrapedData, context));
   type ContentBlock =
     | { type: "image"; source: { type: "base64"; media_type: "image/jpeg"; data: string } }
     | { type: "text"; text: string };
@@ -112,7 +126,7 @@ async function runTextAudit(
     model: "claude-sonnet-4-6",
     max_tokens: 8000,
     system: systemPrompt,
-    messages: [{ role: "user", content: userMessage }],
+    messages: [{ role: "user", content: sanitizeText(userMessage) }],
   });
 
   const textBlock = message.content.find((block) => block.type === "text");
